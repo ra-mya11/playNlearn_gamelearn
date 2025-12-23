@@ -144,9 +144,9 @@ export function RealLifeBudgetSurvival({ onComplete }: { onComplete: (score: num
   const allDecided = fixedExpenses.every((e) => gameState.decisions[`${gameState.day}-${e.id}`]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-accent/5 to-background p-8 gap-8 overflow-auto">
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-accent/5 to-background px-6 md:px-8 py-8 gap-8 overflow-auto">
       {/* Header */}
-      <div className="max-w-4xl mx-auto w-full">
+      <div className="max-w-4xl mx-auto w-full pt-2">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-foreground">🏡 Real Life Budget Survival</h2>
           <div className="text-right">
