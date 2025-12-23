@@ -22,7 +22,9 @@ export function GameContainer({
   gameName,
 }: GameContainerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isExpandedView, setIsExpandedView] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [fullscreenUnavailable, setFullscreenUnavailable] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleFullscreenClick = async () => {
@@ -30,11 +32,22 @@ export function GameContainer({
       const element = containerRef.current?.querySelector("[data-game-canvas]");
       if (!isFullscreen && element) {
         if (element.requestFullscreen) {
-          await element.requestFullscreen();
-          setIsFullscreen(true);
-          // Lock scroll
-          document.documentElement.style.overflow = "hidden";
-          document.body.style.overflow = "hidden";
+          try {
+            await element.requestFullscreen();
+            setIsFullscreen(true);
+            // Lock scroll
+            document.documentElement.style.overflow = "hidden";
+            document.body.style.overflow = "hidden";
+          } catch (fullscreenError: any) {
+            // Fullscreen API is blocked by permissions policy or browser
+            console.warn("Fullscreen not available, using expanded view instead:", fullscreenError);
+            setFullscreenUnavailable(true);
+            setIsExpandedView(true);
+          }
+        } else {
+          // Fullscreen not supported, use expanded view
+          setFullscreenUnavailable(true);
+          setIsExpandedView(true);
         }
       } else if (isFullscreen) {
         if (document.fullscreenElement) {
@@ -44,9 +57,14 @@ export function GameContainer({
         // Unlock scroll
         document.documentElement.style.overflow = "";
         document.body.style.overflow = "";
+      } else if (isExpandedView) {
+        setIsExpandedView(false);
       }
     } catch (error) {
       console.error("Fullscreen error:", error);
+      // Fallback to expanded view
+      setFullscreenUnavailable(true);
+      setIsExpandedView(!isExpandedView);
     }
   };
 
