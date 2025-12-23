@@ -1,5 +1,6 @@
 import { SubjectLayout } from "@/components/student/SubjectLayout";
 import { GameMissionCard } from "@/components/student/GameMissionCard";
+import { MathematicsActiveLearning } from "@/components/active-learning/MathematicsActiveLearning";
 import {
   FractionForge,
   PatternMaster,
