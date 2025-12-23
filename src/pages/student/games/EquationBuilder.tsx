@@ -207,6 +207,9 @@ export default function EquationBuilder() {
     }));
   };
 
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
   const handleRetry = () => {
     setGameState({
       currentEquationIndex: 0,
