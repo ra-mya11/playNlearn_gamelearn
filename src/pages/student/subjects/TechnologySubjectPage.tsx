@@ -33,21 +33,21 @@ const levels: GameLevel[] = [
   {
     id: "1",
     level: 1,
-    name: "Digital Basics",
-    description: "Learn to use computers, phones, and digital devices",
-    game: "Device Master",
+    name: "How Apps Really Work",
+    description: "Visual flow: User Input → Logic → Output. Tap to see data move through systems",
+    game: "Interactive Exploration",
     xp: 100,
     coins: 25,
-    status: "completed",
-    stars: 2,
+    status: "available",
+    stars: 0,
     route: "/student/technology/level/1"
   },
   {
     id: "2",
     level: 2,
-    name: "Internet & Safety",
-    description: "Navigate the web safely and protect your information",
-    game: "Cyber Guardian",
+    name: "Inside a Digital System",
+    description: "Drag blocks (Input, Process, Storage, Output) to understand system architecture",
+    game: "Block Builder",
     xp: 150,
     coins: 35,
     status: "available",
@@ -56,12 +56,12 @@ const levels: GameLevel[] = [
   {
     id: "3",
     level: 3,
-    name: "Problem Solving & Logic",
-    description: "Think like a programmer and solve digital puzzles",
-    game: "Code Quest",
+    name: "Everyday Tech Around You",
+    description: "Tap common items to reveal what inputs and outputs they use",
+    game: "Tech Explorer",
     xp: 200,
     coins: 50,
-    status: "locked",
+    status: "available",
     route: "/student/technology/level/3"
   }
 ];
