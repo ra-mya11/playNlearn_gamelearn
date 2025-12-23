@@ -9,11 +9,12 @@ import { cn } from "@/lib/utils";
 
 interface LogicGate {
   id: number;
-  type: "AND" | "OR" | "NOT";
+  type: "AND" | "OR";
   x: number;
   y: number;
   inputs: (boolean | null)[];
   output: boolean;
+  inputValues: boolean[];
 }
 
 interface InputNode {
@@ -35,7 +36,7 @@ export default function LogicBlocksPuzzle() {
 
   const [inputNodes, setInputNodes] = useState<InputNode[]>([
     { id: 1, value: false, x: 50, y: 100 },
-    { id: 2, value: false, x: 50, y: 200 },
+    { id: 2, value: false, x: 50, y: 250 },
   ]);
 
   const [gates, setGates] = useState<LogicGate[]>([
@@ -46,6 +47,7 @@ export default function LogicBlocksPuzzle() {
       y: 150,
       inputs: [null, null],
       output: false,
+      inputValues: [false, false],
     },
     {
       id: 2,
@@ -54,15 +56,11 @@ export default function LogicBlocksPuzzle() {
       y: 150,
       inputs: [null, null],
       output: false,
+      inputValues: [false, false],
     },
   ]);
 
-  const [outputGate, setOutputGate] = useState({
-    x: 700,
-    y: 150,
-    value: false,
-  });
-
+  const [outputValue, setOutputValue] = useState(false);
   const [connections, setConnections] = useState<Array<{
     fromType: "input" | "gate";
     fromId: number;
@@ -70,66 +68,48 @@ export default function LogicBlocksPuzzle() {
     toInputIndex: number;
   }>>([]);
 
-  const [draggingConnection, setDraggingConnection] = useState<{
-    fromType: "input" | "gate";
-    fromId: number;
-    startX: number;
-    startY: number;
-  } | null>(null);
-
-  const [currentMousePos, setCurrentMousePos] = useState({ x: 0, y: 0 });
   const [attempts, setAttempts] = useState(0);
+  const [showHint, setShowHint] = useState(false);
 
-  // Toggle input
-  const toggleInput = (id: number) => {
-    setInputNodes((prev) =>
-      prev.map((node) => (node.id === id ? { ...node, value: !node.value } : node))
-    );
-    setAttempts((prev) => prev + 1);
-  };
-
-  // Evaluate logic
+  // Auto-evaluate logic gates
   useEffect(() => {
     const newGates = gates.map((gate) => {
-      let output = false;
+      const inputVals = [false, false];
 
-      const inputs = gate.inputs.map((_, index) => {
+      // Get input values from connections
+      for (let i = 0; i < 2; i++) {
         const conn = connections.find(
-          (c) => c.toGateId === gate.id && c.toInputIndex === index
+          (c) => c.toGateId === gate.id && c.toInputIndex === i
         );
-        if (!conn) return false;
+        if (!conn) continue;
 
         if (conn.fromType === "input") {
-          return inputNodes.find((n) => n.id === conn.fromId)?.value || false;
+          const node = inputNodes.find((n) => n.id === conn.fromId);
+          if (node) inputVals[i] = node.value;
         } else {
           const sourceGate = gates.find((g) => g.id === conn.fromId);
-          return sourceGate?.output || false;
+          if (sourceGate) inputVals[i] = sourceGate.output;
         }
-      });
+      }
 
+      let output = false;
       switch (gate.type) {
         case "AND":
-          output = inputs[0] && inputs[1];
+          output = inputVals[0] && inputVals[1];
           break;
         case "OR":
-          output = inputs[0] || inputs[1];
-          break;
-        case "NOT":
-          output = !inputs[0];
+          output = inputVals[0] || inputVals[1];
           break;
       }
 
-      return { ...gate, inputs: inputs as (boolean | null)[], output };
+      return { ...gate, inputValues: inputVals, output };
     });
 
     setGates(newGates);
 
-    // Calculate output
+    // Calculate final output
     const lastGate = newGates[newGates.length - 1];
-    setOutputGate((prev) => ({
-      ...prev,
-      value: lastGate.output,
-    }));
+    setOutputValue(lastGate.output);
   }, [inputNodes, connections]);
 
   // Canvas rendering
@@ -153,34 +133,28 @@ export default function LogicBlocksPuzzle() {
       ctx.lineTo(i, GAME_HEIGHT);
       ctx.stroke();
     }
-    for (let i = 0; i < GAME_HEIGHT; i += 50) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(GAME_WIDTH, i);
-      ctx.stroke();
-    }
 
     // Title
     ctx.fillStyle = "#FFF";
     ctx.font = "bold 20px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Connect Inputs Through Logic Gates to Light the Output", GAME_WIDTH / 2, 25);
+    ctx.fillText("Connect Logic Gates to Control the Output", GAME_WIDTH / 2, 25);
 
-    // Draw connections
+    // ===== CONNECTIONS =====
     connections.forEach((conn) => {
-      let fromX = 0;
-      let fromY = 0;
+      let fromX = 0,
+        fromY = 0;
 
       if (conn.fromType === "input") {
         const node = inputNodes.find((n) => n.id === conn.fromId);
         if (node) {
-          fromX = node.x + 30;
+          fromX = node.x + 25;
           fromY = node.y;
         }
       } else {
         const gate = gates.find((g) => g.id === conn.fromId);
         if (gate) {
-          fromX = gate.x + 60;
+          fromX = gate.x + 50;
           fromY = gate.y;
         }
       }
@@ -189,229 +163,190 @@ export default function LogicBlocksPuzzle() {
       if (!toGate) return;
 
       const toX = toGate.x;
-      const toY = toGate.y + (conn.toInputIndex === 0 ? -15 : 15);
+      const toY = toGate.y + (conn.toInputIndex === 0 ? -20 : 20);
 
+      // Connection line
       ctx.strokeStyle = "#3b82f6";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(fromX, fromY);
       ctx.quadraticCurveTo((fromX + toX) / 2, (fromY + toY) / 2, toX, toY);
       ctx.stroke();
+
+      // Animated flow on connection
+      const offset = (Date.now() / 30) % 100;
+      const t = offset / 100;
+      const x = fromX + (toX - fromX) * t;
+      const y =
+        fromY +
+        (((toY - fromY) + 2 * (toY - fromY) * t * (1 - t)) -
+          (fromY - fromY + 2 * (toY - fromY) * t * (1 - t)));
+
+      ctx.fillStyle = "#60A5FA";
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
     });
 
-    // Draw dragging connection
-    if (draggingConnection) {
-      ctx.strokeStyle = "rgba(59, 130, 246, 0.5)";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      ctx.moveTo(draggingConnection.startX, draggingConnection.startY);
-      ctx.lineTo(currentMousePos.x, currentMousePos.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    // Draw input nodes
+    // ===== INPUT NODES =====
     inputNodes.forEach((node) => {
-      const isOn = node.value;
-      ctx.fillStyle = isOn ? "#22c55e" : "#ef4444";
+      // Node circle
+      ctx.fillStyle = node.value ? "#22c55e" : "#ef4444";
       ctx.beginPath();
-      ctx.arc(node.x + 15, node.y, 12, 0, Math.PI * 2);
+      ctx.arc(node.x + 15, node.y, 15, 0, Math.PI * 2);
       ctx.fill();
 
-      // Label
+      // Value indicator
       ctx.fillStyle = "#FFF";
-      ctx.font = "bold 10px Arial";
+      ctx.font = "bold 12px Arial";
       ctx.textAlign = "center";
-      ctx.fillText(isOn ? "1" : "0", node.x + 15, node.y + 3);
+      ctx.fillText(node.value ? "1" : "0", node.x + 15, node.y + 4);
 
-      // Text label
+      // Label
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "12px Arial";
       ctx.textAlign = "right";
-      ctx.fillText(`In ${node.id}`, node.x - 10, node.y + 4);
+      ctx.fillText(`Input ${node.id}`, node.x - 10, node.y + 5);
 
-      // Outline for interaction
+      // Tap feedback
       ctx.strokeStyle = "#94a3b8";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(node.x + 15, node.y, 15, 0, Math.PI * 2);
+      ctx.arc(node.x + 15, node.y, 18, 0, Math.PI * 2);
       ctx.stroke();
     });
 
-    // Draw gates
+    // ===== LOGIC GATES =====
     gates.forEach((gate) => {
       const width = 60;
       const height = 50;
 
       // Gate box
-      ctx.fillStyle = "#334155";
+      ctx.fillStyle = gate.output ? "#22c55e" : "#334155";
       ctx.fillRect(gate.x, gate.y - height / 2, width, height);
 
-      // Gate border
+      // Border
       ctx.strokeStyle = gate.output ? "#22c55e" : "#64748b";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = gate.output ? 3 : 2;
       ctx.strokeRect(gate.x, gate.y - height / 2, width, height);
 
-      // Gate label
-      ctx.fillStyle = gate.output ? "#22c55e" : "#e2e8f0";
-      ctx.font = "bold 12px Arial";
+      // Label
+      ctx.fillStyle = gate.output ? "#000" : "#e2e8f0";
+      ctx.font = "bold 14px Arial";
       ctx.textAlign = "center";
-      ctx.fillText(gate.type, gate.x + width / 2, gate.y + 3);
+      ctx.fillText(gate.type, gate.x + width / 2, gate.y + 5);
 
       // Input points
       ctx.fillStyle = "#3b82f6";
       ctx.beginPath();
-      ctx.arc(gate.x, gate.y - 15, 4, 0, Math.PI * 2);
+      ctx.arc(gate.x, gate.y - 18, 5, 0, Math.PI * 2);
       ctx.fill();
 
-      if (gate.type !== "NOT") {
-        ctx.beginPath();
-        ctx.arc(gate.x, gate.y + 15, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      ctx.beginPath();
+      ctx.arc(gate.x, gate.y + 18, 5, 0, Math.PI * 2);
+      ctx.fill();
 
       // Output point
       ctx.fillStyle = gate.output ? "#22c55e" : "#8b5cf6";
       ctx.beginPath();
-      ctx.arc(gate.x + width, gate.y, 5, 0, Math.PI * 2);
+      ctx.arc(gate.x + width, gate.y, 6, 0, Math.PI * 2);
       ctx.fill();
+
+      // Input value indicators
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "10px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(gate.inputValues[0] ? "1" : "0", gate.x + width / 2, gate.y - 25);
+      ctx.fillText(gate.inputValues[1] ? "1" : "0", gate.x + width / 2, gate.y + 30);
     });
 
-    // Draw output
-    ctx.fillStyle = outputGate.value ? "#22c55e" : "#ef4444";
+    // ===== OUTPUT =====
+    const outputX = 750;
+    const outputY = 150;
+
+    // Output node
+    ctx.fillStyle = outputValue ? "#22c55e" : "#ef4444";
     ctx.beginPath();
-    ctx.arc(outputGate.x, outputGate.y, 15, 0, Math.PI * 2);
+    ctx.arc(outputX, outputY, 18, 0, Math.PI * 2);
     ctx.fill();
 
-    // Output glow if on
-    if (outputGate.value) {
+    // Glow if on
+    if (outputValue) {
       ctx.strokeStyle = "rgba(34, 197, 94, 0.5)";
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(outputGate.x, outputGate.y, 20, 0, Math.PI * 2);
+      ctx.arc(outputX, outputY, 25, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // Output label
+    // Value display
     ctx.fillStyle = "#FFF";
-    ctx.font = "bold 12px Arial";
+    ctx.font = "bold 14px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("OUT", outputGate.x, outputGate.y + 3);
+    ctx.fillText(outputValue ? "1" : "0", outputX, outputY + 5);
 
-    // Output text
+    // Label
     ctx.fillStyle = "#cbd5e1";
     ctx.font = "12px Arial";
     ctx.textAlign = "left";
-    ctx.fillText(outputGate.value ? "ON" : "OFF", outputGate.x + 25, outputGate.y + 4);
+    ctx.fillText("OUTPUT", outputX + 30, outputY + 5);
 
-    // Status
-    ctx.fillStyle = outputGate.value ? "#22c55e" : "#64748b";
+    // ===== STATUS =====
+    ctx.fillStyle = outputValue ? "#22c55e" : "#64748b";
     ctx.font = "14px Arial";
     ctx.textAlign = "center";
     ctx.fillText(
-      outputGate.value ? "✓ Output ON" : "Output OFF",
+      outputValue ? "✓ Output ON" : "Output OFF",
       GAME_WIDTH / 2,
       GAME_HEIGHT - 20
     );
-  }, [inputNodes, gates, connections, draggingConnection, currentMousePos, outputGate]);
 
-  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    if (!outputValue && attempts > 5 && showHint) {
+      ctx.fillStyle = "#FFA500";
+      ctx.font = "12px Arial";
+      ctx.fillText(
+        "Try connecting both inputs to create AND logic",
+        GAME_WIDTH / 2,
+        GAME_HEIGHT - 40
+      );
+    }
+  }, [inputNodes, gates, connections, outputValue, attempts, showHint]);
+
+  // Mouse handlers for touch/click
+  const handleCanvasClick = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    let x = 0,
+      y = 0;
 
-    // Check if clicking input node
-    inputNodes.forEach((node) => {
-      if (
-        Math.abs(x - (node.x + 15)) < 20 &&
-        Math.abs(y - node.y) < 20
-      ) {
-        toggleInput(node.id);
-      }
-    });
-
-    // Check if starting connection from gate
-    gates.forEach((gate) => {
-      if (
-        x >= gate.x &&
-        x <= gate.x + 60 &&
-        y >= gate.y - 25 &&
-        y <= gate.y + 25
-      ) {
-        setDraggingConnection({
-          fromType: "gate",
-          fromId: gate.id,
-          startX: gate.x + 60,
-          startY: gate.y,
-        });
-      }
-    });
-  };
-
-  const handleCanvasMouseMove = (e: React.MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setCurrentMousePos({ x, y });
-  };
-
-  const handleCanvasMouseUp = (e: React.MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (draggingConnection) {
-      gates.forEach((gate) => {
-        const inputY1 = gate.y - 15;
-        const inputY2 = gate.y + 15;
-
-        if (
-          x >= gate.x - 10 &&
-          x <= gate.x + 10 &&
-          Math.abs(y - inputY1) < 10
-        ) {
-          setConnections((prev) => [
-            ...prev,
-            {
-              fromType: draggingConnection.fromType,
-              fromId: draggingConnection.fromId,
-              toGateId: gate.id,
-              toInputIndex: 0,
-            },
-          ]);
-        }
-
-        if (
-          x >= gate.x - 10 &&
-          x <= gate.x + 10 &&
-          Math.abs(y - inputY2) < 10 &&
-          gate.type !== "NOT"
-        ) {
-          setConnections((prev) => [
-            ...prev,
-            {
-              fromType: draggingConnection.fromType,
-              fromId: draggingConnection.fromId,
-              toGateId: gate.id,
-              toInputIndex: 1,
-            },
-          ]);
-        }
-      });
+    if ("touches" in e) {
+      x = e.touches[0].clientX - rect.left;
+      y = e.touches[0].clientY - rect.top;
+    } else {
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
     }
 
-    setDraggingConnection(null);
+    // Click input nodes to toggle
+    inputNodes.forEach((node) => {
+      const dist = Math.sqrt((x - (node.x + 15)) ** 2 + (y - node.y) ** 2);
+      if (dist < 20) {
+        setInputNodes((prev) =>
+          prev.map((n) => (n.id === node.id ? { ...n, value: !n.value } : n))
+        );
+        setAttempts((prev) => prev + 1);
+      }
+    });
+
+    // Click gate output to start connection (simplified - just for visual feedback)
+    gates.forEach((gate) => {
+      const dist = Math.sqrt((x - (gate.x + 60)) ** 2 + (y - gate.y) ** 2);
+      if (dist < 8) {
+        // Gate output clicked - could start connection
+      }
+    });
   };
 
   const handleStart = () => {
@@ -429,36 +364,30 @@ export default function LogicBlocksPuzzle() {
   const handleReset = () => {
     setInputNodes([
       { id: 1, value: false, x: 50, y: 100 },
-      { id: 2, value: false, x: 50, y: 200 },
-    ]);
-    setGates([
-      {
-        id: 1,
-        type: "AND",
-        x: 250,
-        y: 150,
-        inputs: [null, null],
-        output: false,
-      },
-      {
-        id: 2,
-        type: "OR",
-        x: 450,
-        y: 150,
-        inputs: [null, null],
-        output: false,
-      },
+      { id: 2, value: false, x: 50, y: 250 },
     ]);
     setConnections([]);
     setAttempts(0);
+    setShowHint(false);
     setShowCompletion(false);
+  };
+
+  // Pre-connected example
+  const addExampleConnection = () => {
+    // Connect Input 1 and Input 2 to AND gate
+    const newConns = [
+      { fromType: "input" as const, fromId: 1, toGateId: 1, toInputIndex: 0 },
+      { fromType: "input" as const, fromId: 2, toGateId: 1, toInputIndex: 1 },
+      { fromType: "gate" as const, fromId: 1, toGateId: 2, toInputIndex: 0 },
+    ];
+    setConnections(newConns);
   };
 
   const gameContainer = (
     <div
       className={cn(
         "flex flex-col items-center justify-center transition-all duration-300",
-        isFullscreen ? "fixed inset-0 z-50 bg-black p-0" : "w-full bg-slate-900 p-4"
+        isFullscreen ? "fixed inset-0 z-50 bg-black p-0 overflow-hidden" : "w-full bg-slate-900 p-4"
       )}
     >
       {/* Fullscreen button */}
@@ -481,7 +410,7 @@ export default function LogicBlocksPuzzle() {
           onClick={() => setIsFullscreen(false)}
           size="sm"
           variant="outline"
-          className="absolute top-4 right-4 z-10 gap-2 bg-white"
+          className="absolute top-4 right-4 z-10 gap-2 bg-white hover:bg-gray-100"
         >
           <Minimize2 className="w-4 h-4" />
           Exit
@@ -497,72 +426,91 @@ export default function LogicBlocksPuzzle() {
           ref={canvasRef}
           width={GAME_WIDTH}
           height={GAME_HEIGHT}
-          className="w-full h-full cursor-crosshair"
-          onMouseDown={handleCanvasMouseDown}
-          onMouseMove={handleCanvasMouseMove}
-          onMouseUp={handleCanvasMouseUp}
-          onMouseLeave={() => setDraggingConnection(null)}
+          className="w-full h-full cursor-pointer touch-none"
+          onClick={handleCanvasClick}
+          onTouchEnd={handleCanvasClick}
         />
       </div>
 
       {/* Controls */}
       {!isFullscreen && (
-        <div className="mt-6 w-full max-w-5xl bg-slate-800 p-6 rounded-lg border border-purple-500">
+        <div className="mt-6 w-full max-w-5xl bg-slate-800 p-6 rounded-lg border border-purple-500 shadow-md">
           <div className="space-y-6">
             <div className="text-white text-center text-sm">
-              <p className="mb-2">
-                Click input nodes (red/green circles) to toggle them. Drag from gate outputs to gate inputs to create connections.
+              <p className="mb-2 font-semibold">
+                Click input circles (red/green) to toggle them ON and OFF.
               </p>
               <p className="text-xs text-gray-400">
-                Goal: Make the output light green by routing signals through logic gates!
+                Goal: Make the output light green (value = 1)!
               </p>
             </div>
 
-            {/* Logic Explanation */}
-            <div className="grid grid-cols-3 gap-3 p-4 bg-slate-700 rounded-lg">
+            {/* Logic Gate Explanation */}
+            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-700 rounded-lg">
               <div className="text-white text-center text-xs">
                 <div className="font-bold mb-2">AND Gate</div>
-                <p className="text-gray-400">Both inputs = ON</p>
+                <p className="text-gray-400">Both inputs = 1</p>
+                <p className="text-gray-300 font-mono text-sm mt-1">1 AND 1 = 1</p>
               </div>
               <div className="text-white text-center text-xs">
                 <div className="font-bold mb-2">OR Gate</div>
-                <p className="text-gray-400">One input = ON</p>
-              </div>
-              <div className="text-white text-center text-xs">
-                <div className="font-bold mb-2">NOT Gate</div>
-                <p className="text-gray-400">Flips the signal</p>
+                <p className="text-gray-400">One input = 1</p>
+                <p className="text-gray-300 font-mono text-sm mt-1">1 OR 0 = 1</p>
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-700 rounded-lg text-white text-center">
-              <div>
-                <div className="text-xs text-gray-400">Connections Made</div>
-                <div className="text-2xl font-bold text-purple-400">{connections.length}</div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-400">Attempts</div>
-                <div className="text-2xl font-bold text-blue-400">{attempts}</div>
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Actions */}
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                onClick={addExampleConnection}
+                variant="outline"
+                className="text-blue-400 border-blue-500 hover:bg-blue-500 hover:text-white font-bold text-xs"
+              >
+                📎 Connect
+              </Button>
+              <Button
+                onClick={() => setShowHint(!showHint)}
+                variant="outline"
+                className="text-yellow-400 border-yellow-500 hover:bg-yellow-500 hover:text-black font-bold text-xs"
+              >
+                💡 Hint
+              </Button>
               <Button
                 onClick={handleReset}
                 variant="outline"
-                className="text-purple-400 border-purple-500 hover:bg-purple-500 hover:text-white font-bold"
+                className="text-red-400 border-red-500 hover:bg-red-500 hover:text-white font-bold text-xs"
               >
                 🔄 Reset
               </Button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 p-4 bg-slate-700 rounded-lg text-white text-center">
+              <div>
+                <div className="text-xs text-gray-400">Connections</div>
+                <div className="text-2xl font-bold text-blue-400">{connections.length}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400">Attempts</div>
+                <div className="text-2xl font-bold text-purple-400">{attempts}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400">Output</div>
+                <div className="text-2xl font-bold" style={{ color: outputValue ? "#22c55e" : "#ef4444" }}>
+                  {outputValue ? "1" : "0"}
+                </div>
+              </div>
+            </div>
+
+            {outputValue && (
               <Button
                 onClick={() => setShowCompletion(true)}
-                disabled={!outputGate.value}
-                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold"
+                size="lg"
               >
-                ✅ Output ON!
+                ✅ Output is ON!
               </Button>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -574,19 +522,19 @@ export default function LogicBlocksPuzzle() {
             <div>
               <h3 className="font-bold text-gray-800 mb-2">📘 Concept</h3>
               <p className="text-sm text-gray-700">
-                Logic gates are like decision makers. AND needs both inputs ON, OR needs at least one ON, NOT flips the signal.
+                Logic gates are decision makers. AND gates need BOTH inputs ON. OR gates need at least ONE input ON.
               </p>
             </div>
             <div>
               <h3 className="font-bold text-gray-800 mb-2">🕹 How to Play</h3>
               <p className="text-sm text-gray-700">
-                Click input circles to toggle ON/OFF. Drag from gate outputs to other gate inputs to create connections. Route signals to light the output!
+                Click the red/green input circles to toggle them. Use the Connect button to link inputs to gates. Make the output turn green!
               </p>
             </div>
             <div>
               <h3 className="font-bold text-gray-800 mb-2">🧠 What You Learn</h3>
               <p className="text-sm text-gray-700">
-                AND gates require both inputs. OR gates need one. Logic is predictable and follows clear rules!
+                Logic is predictable and follows clear rules. AND requires both. OR needs one. Logic gates combine to solve problems!
               </p>
             </div>
           </div>
@@ -602,24 +550,24 @@ export default function LogicBlocksPuzzle() {
         onStart={handleStart}
         onGoBack={handleGoBack}
         conceptName="Logic Blocks Puzzle"
-        whatYouWillUnderstand="Understand how logic gates work and how to combine them to solve problems."
+        whatYouWillUnderstand="Understand how logic gates work. AND needs both inputs. OR needs one. Combine them to solve puzzles!"
         gameSteps={[
-          "Toggle input nodes (red/green circles) ON and OFF",
-          "Drag connections from gate outputs to other gate inputs",
-          "AND gate lights up when both inputs are ON",
-          "OR gate lights up when at least one input is ON",
-          "Route signals to make the output light green!",
+          "Click input circles (red/green) to toggle them ON (green) and OFF (red)",
+          "Click the Connect button to link inputs to logic gates",
+          "AND gates output 1 only when BOTH inputs are 1",
+          "OR gates output 1 when at least ONE input is 1",
+          "Make the output turn green (= 1)!",
         ]}
-        successMeaning="When the output turns green and says ON, you've successfully routed the logic signals!"
+        successMeaning="When the output turns green and shows 1, you've successfully activated the logic gates!"
         icon="⚙️"
       />
 
       <GameCompletionPopup
-        isOpen={showCompletion && outputGate.value}
+        isOpen={showCompletion && outputValue}
         onPlayAgain={handleReset}
         onExitFullscreen={handleExitFullscreen}
         onBackToGames={handleGoBack}
-        learningOutcome="You mastered logic gates! You understand how AND, OR, and NOT gates work and how to combine them to solve problems."
+        learningOutcome="You mastered logic gates! AND gates need both inputs. OR gates need one. Logic is predictable!"
         isFullscreen={isFullscreen}
       />
 
