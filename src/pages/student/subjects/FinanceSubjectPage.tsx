@@ -502,45 +502,47 @@ export default function FinanceSubjectPage() {
             <div className="mb-4">
               <h3 className="font-heading font-semibold text-foreground flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                Learning Levels
+                Interactive Modules
               </h3>
-              <p className="text-sm text-muted-foreground mt-1">Complete levels to build your skills</p>
+              <p className="text-sm text-muted-foreground mt-1">Build mental models through guided exploration</p>
             </div>
 
-            <div className="space-y-3">
-              {activeLearningLevels.map((level, index) => (
-                <Card 
-                  key={level.level}
-                  className="glass-card border border-primary/30 p-4 slide-up"
-                  style={{ animationDelay: `${100 + index * 75}ms` }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                      <span className="font-heading text-lg font-bold text-primary-foreground">{level.level}</span>
-                    </div>
-
-                    <div className="flex-1">
-                      <h4 className="font-heading font-semibold text-foreground mb-1">
-                        Level {level.level}: {level.name}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">{level.description}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-accent">+{level.coins} 🪙</span>
-                        <span className="text-xs text-primary">+{level.xp} XP</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {activeLearningModules.map((module, index) => {
+                const Icon = module.icon;
+                return (
+                  <Card
+                    key={module.id}
+                    className="glass-card border border-primary/30 p-4 hover:scale-105 transition-transform cursor-pointer slide-up"
+                    style={{ animationDelay: `${100 + index * 75}ms` }}
+                    onClick={() => setActiveModule(module)}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                        <Icon className="h-6 w-6 text-primary-foreground" />
                       </div>
                     </div>
 
+                    <h4 className="font-heading font-semibold text-foreground mb-1">
+                      {module.name}
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-accent">+{module.coins} 🪙</span>
+                      <span className="text-xs text-primary">+{module.xp} XP</span>
+                    </div>
+
                     <Button
-                      variant="ghost"
+                      variant="default"
                       size="sm"
-                      className="shrink-0"
+                      className="w-full mt-3 bg-primary hover:bg-primary/90"
                     >
-                      Start
+                      Explore
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </TabsContent>
 
