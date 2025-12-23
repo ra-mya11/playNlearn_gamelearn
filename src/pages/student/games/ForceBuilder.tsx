@@ -277,7 +277,7 @@ export default function ForceBuilder() {
     <div
       className={cn(
         "flex flex-col items-center justify-center transition-all duration-300",
-        isFullscreen ? "fixed inset-0 z-50 bg-black p-0" : "w-full bg-gradient-to-br from-blue-50 to-cyan-50 p-4"
+        isFullscreen ? "fixed inset-0 z-50 bg-black p-0" : "w-full bg-background p-4"
       )}
     >
       {/* Fullscreen button */}
