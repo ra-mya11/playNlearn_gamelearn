@@ -13,6 +13,7 @@ interface Reaction {
   substance2Formula: string;
   result: string;
   resultColor: string;
+  productFormula: string;
   emoji1: string;
   emoji2: string;
   effects: string[];
