@@ -458,8 +458,8 @@ export default function FinanceSubjectPage() {
             </Card>
 
             {/* Passive Learning Card */}
-            <Card 
-              className="glass-card border border-secondary/30 p-6 hover:scale-102 transition-transform cursor-pointer slide-up"
+            <Card
+              className="glass-card border border-secondary/30 p-6 hover:scale-105 transition-transform cursor-pointer slide-up"
               onClick={() => setLearningMode("passive")}
               style={{ animationDelay: "75ms" }}
             >
