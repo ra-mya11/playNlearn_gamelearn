@@ -21,14 +21,13 @@ export { CircuitBuilder } from "./CircuitBuilder";
 export { InputOutputLab } from "./InputOutputLab";
 export { NetworkBuilder } from "./NetworkBuilder";
 
-// Finance Games
-export { PocketMoneyManager } from "./PocketMoneyManager";
-export { SmartShopperChallenge } from "./SmartShopperChallenge";
-export { SavingsGrower } from "./SavingsGrower";
-export { BankingBasicsSimulator } from "./BankingBasicsSimulator";
-export { PriceCompareMaster } from "./PriceCompareMaster";
-export { MiniBusinessTycoon } from "./MiniBusinessTycoon";
-export { DigitalMoneyExplorer } from "./DigitalMoneyExplorer";
+// Finance Games (Rebuilt)
+export { RealLifeBudgetSurvival } from "./RealLifeBudgetSurvival";
+export { MarketPriceNegotiator } from "./MarketPriceNegotiator";
+export { SavingsTree } from "./SavingsTree";
+export { BankInterestSimulator } from "./BankInterestSimulator";
+export { MicroBusinessBuilder } from "./MicroBusinessBuilder";
+export { DigitalMoneyChoices } from "./DigitalMoneyChoices";
 
 // Finance Active Learning Components
 export { MoneyFlowVisualizer } from "./MoneyFlowVisualizer";
