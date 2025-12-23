@@ -193,6 +193,15 @@ export function GameContainer({
         </div>
       </div>
 
+      {/* Fullscreen Unavailable Info */}
+      {fullscreenUnavailable && !isInExpandedMode && (
+        <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+          <p className="text-sm text-blue-800">
+            💡 <strong>Tip:</strong> Click the expand button in the top-right to play in a larger view!
+          </p>
+        </div>
+      )}
+
       {/* Instructions & Learning Section */}
       {!isInExpandedMode && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
