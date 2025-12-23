@@ -83,7 +83,27 @@ interface GameState {
   bondedAtoms: BondedAtom[];
   selectedAtom: string | null;
   isComplete: boolean;
+  showInvalidFeedback: boolean;
 }
+
+// Helper function to generate formula from atoms
+const generateFormula = (atoms: BondedAtom[]): string => {
+  if (atoms.length === 0) return "";
+
+  const elementCounts: Record<string, number> = {};
+  atoms.forEach((atom) => {
+    elementCounts[atom.element] = (elementCounts[atom.element] || 0) + 1;
+  });
+
+  // Format: H₂O, CH₄, etc.
+  return Object.entries(elementCounts)
+    .map(([element, count]) => {
+      if (count === 1) return element;
+      const subscript = "₀₁₂₃₄₅₆₇₈₉";
+      return element + subscript[count];
+    })
+    .join("");
+};
 
 export default function MoleculeBuilder() {
   const navigate = useNavigate();
