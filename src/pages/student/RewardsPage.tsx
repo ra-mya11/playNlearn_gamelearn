@@ -89,10 +89,26 @@ export default function RewardsPage() {
           height: 18px !important;
         }
 
+        .balance-card {
+          display: flex;
+          align-items: center;
+          font-weight: 400;
+        }
+
+        .earned-card, .spent-card {
+          display: flex;
+          flex-direction: column;
+        }
+
         @media (max-width: 640px) {
           .accent-blur-bg {
             width: 249px !important;
             height: 327px !important;
+          }
+          .balance-card {
+            height: 120px !important;
+            margin: auto 0 !important;
+            padding: 15px 20px !important;
           }
           .edu-coin-balance-lg {
             width: 30px !important;
@@ -110,6 +126,9 @@ export default function RewardsPage() {
             max-width: 130px !important;
             padding-left: 4px !important;
             margin: auto 0 auto auto !important;
+          }
+          .earned-card, .spent-card {
+            margin-top: 20px !important;
           }
           .edu-coin-product-price {
             width: 16px !important;
