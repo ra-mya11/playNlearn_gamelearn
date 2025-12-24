@@ -490,6 +490,18 @@ export function SyncPopupModal({
           }
         }
 
+        @keyframes modal-pop-success {
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+
         @keyframes slideInSync {
           from {
             opacity: 0;
