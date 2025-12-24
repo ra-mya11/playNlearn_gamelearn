@@ -191,31 +191,24 @@ export function DataSyncStatus({ className }: DataSyncStatusProps) {
           className
         )}
       >
-        {/* Dual-arrow Sync Icon */}
+        {/* Circular Sync Icon - Curved Arrows */}
         <svg
           className={cn(
             'w-5 h-5 flex-shrink-0',
-            syncStatus === 'syncing' && 'animate-sync-rotate'
+            syncStatus === 'syncing' && 'animate-sync-rotate-slow'
           )}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           aria-hidden="true"
         >
-          {/* Left arrow up */}
-          <path
-            d="M7 16V4m0 0L3 8m4-4l4 4"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Right arrow down */}
-          <path
-            d="M17 8v12m0 0l4-4m-4 4l-4-4"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {/* Top right curved arrow */}
+          <path d="M21.5 2.5L21.5 9m0 0h-6.5m6.5 0c-2.76-2.76-7.24-2.76-10 0s-2.76 7.24 0 10" />
+          {/* Bottom left curved arrow */}
+          <path d="M2.5 21.5h6.5m0 0v-6.5m0 6.5c2.76 2.76 7.24 2.76 10 0s2.76-7.24 0-10" />
         </svg>
 
         {/* Status Badge for Success */}
