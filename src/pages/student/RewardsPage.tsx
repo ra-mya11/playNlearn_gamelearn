@@ -90,17 +90,18 @@ export default function RewardsPage() {
           gap: 16px;
         }
 
-        /* Primary Balance Card */
+        /* Primary Balance Card — Single Horizontal Card */
         .balance-card-primary {
-          display: grid;
-          grid-template-columns: 1fr auto;
+          display: flex;
+          flex-direction: row;
           align-items: center;
-          gap: 20px;
+          gap: 24px;
           border-radius: 24px;
           border: 0.8px solid rgba(5, 179, 214, 0.2);
           background: linear-gradient(to right, rgba(5, 179, 214, 0.1), rgba(149, 96, 240, 0.1));
-          padding: 24px;
+          padding: 20px 24px;
           position: relative;
+          min-height: 140px;
         }
 
         .balance-content {
@@ -108,6 +109,8 @@ export default function RewardsPage() {
           flex-direction: column;
           gap: 0;
           font-weight: 400;
+          flex: 1;
+          justify-content: center;
         }
 
         .balance-label {
@@ -151,12 +154,13 @@ export default function RewardsPage() {
 
         .balance-mascot-img {
           display: block;
-          width: 100%;
-          max-width: 140px;
+          width: 120px;
+          max-width: 120px;
           aspect-ratio: 1.07 / 1;
           object-fit: contain;
           flex-shrink: 0;
-          margin: 0 auto;
+          margin: 0;
+          align-self: center;
         }
 
         /* Secondary Stats Cards */
@@ -238,8 +242,10 @@ export default function RewardsPage() {
           }
 
           .balance-card-primary {
-            grid-template-columns: 1fr;
-            padding: 15px 20px;
+            flex-direction: row;
+            padding: 16px 20px;
+            gap: 16px;
+            min-height: 120px;
           }
 
           .balance-amount {
@@ -248,9 +254,8 @@ export default function RewardsPage() {
           }
 
           .balance-mascot-img {
-            max-width: 130px;
-            padding-left: 4px;
-            margin: 0 auto 0 auto;
+            width: 100px;
+            max-width: 100px;
           }
 
           .stats-row {
