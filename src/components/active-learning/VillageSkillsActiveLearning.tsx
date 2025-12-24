@@ -95,8 +95,8 @@ function WaterUsagePlanner() {
         </div>
 
         {/* Water Visual */}
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
-          <div className="h-6 bg-slate-300 rounded-full overflow-hidden">
+        <div className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-lg backdrop-blur-sm">
+          <div className="h-6 bg-slate-700/50 rounded-full overflow-hidden border border-slate-600/30">
             <div
               className={`h-full transition-all duration-300 ${
                 remaining < 0
@@ -113,7 +113,7 @@ function WaterUsagePlanner() {
           </div>
         </div>
 
-        <div className="text-xs text-center text-muted-foreground bg-white dark:bg-slate-800 p-2 rounded">
+        <div className="text-xs text-center text-muted-foreground bg-slate-800/50 border border-slate-700/50 p-2 rounded backdrop-blur-sm">
           Save water for farming — it feeds the village!
         </div>
       </div>
@@ -202,7 +202,7 @@ function FarmTaskSequencer() {
         </div>
 
         {/* Sequence Display */}
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border-2 border-dashed border-slate-300">
+        <div className="bg-slate-800/50 border-2 border-dashed border-slate-600/50 p-4 rounded-lg backdrop-blur-sm">
           {sequence.length === 0 ? (
             <div className="text-center text-muted-foreground text-sm">
               Click tasks to build your farming plan
@@ -240,7 +240,7 @@ function FarmTaskSequencer() {
           </div>
         )}
 
-        <div className="text-xs text-center text-muted-foreground bg-white dark:bg-slate-800 p-2 rounded">
+        <div className="text-xs text-center text-muted-foreground bg-slate-800/50 border border-slate-700/50 p-2 rounded backdrop-blur-sm">
           Order and timing are critical for farming success
         </div>
       </div>
@@ -300,7 +300,7 @@ function HouseholdFixIt() {
         {problems.map((problem) => (
           <div
             key={problem.id}
-            className="p-3 rounded-lg border border-border bg-white dark:bg-slate-800"
+            className="p-3 rounded-lg border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm"
           >
             <div className="font-semibold text-sm mb-3">Problem {problem.id}: {problem.problem}</div>
 
@@ -346,7 +346,7 @@ function HouseholdFixIt() {
           </div>
         )}
 
-        <div className="text-xs text-center text-muted-foreground bg-white dark:bg-slate-800 p-2 rounded">
+        <div className="text-xs text-center text-muted-foreground bg-slate-800/50 border border-slate-700/50 p-2 rounded backdrop-blur-sm">
           Practical skills solve real household problems
         </div>
       </div>

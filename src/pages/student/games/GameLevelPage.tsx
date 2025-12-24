@@ -111,9 +111,8 @@ interface Question {
 const getQuizQuestions = (subject: string, level: string): Question[] => {
   // Simplified for brevity, normally huge list
   return [
-    { id: 1, question: "Ready to learn?", options: ["Yes", "No", "Maybe", "Later"], correctAnswer: 0 },
-    { id: 2, question: "Is learning fun?", options: ["Yes", "No", "Sometimes", "Always"], correctAnswer: 3 },
-    { id: 3, question: "Keep going?", options: ["Yes", "No", "Stop", "Quit"], correctAnswer: 0 },
+    { id: 1, question: "Is learning fun?", options: ["Yes", "No", "Sometimes", "Always"], correctAnswer: 3 },
+    { id: 2, question: "Keep going?", options: ["Yes", "No", "Stop", "Quit"], correctAnswer: 0 },
   ];
 };
 

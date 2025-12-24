@@ -38,3 +38,10 @@ export { InterestStory } from "./InterestStory";
 // Shared Game Components
 export { GameIntroModal } from "./GameIntroModal";
 export { GameContainer } from "./GameContainer";
+
+// Village Skills Games (NEW)
+export { SmartFarmer } from "./SmartFarmer";
+export { WaterSaverMission } from "./WaterSaverMission";
+export { VillageMarketManager } from "./VillageMarketManager";
+export { GameStartPopup } from "./GameStartPopup";
+export { GameCompletionPopup } from "./GameCompletionPopup";

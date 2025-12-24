@@ -39,6 +39,7 @@ const MathematicsSubjectPage = lazy(() => import("./pages/student/subjects/Mathe
 const TechnologySubjectPage = lazy(() => import("./pages/student/subjects/TechnologySubjectPage"));
 const TechnologyActiveLearningPage = lazy(() => import("./pages/student/subjects/TechnologyActiveLearningPage"));
 const VillageSkillsSubjectPage = lazy(() => import("./pages/student/subjects/VillageSkillsSubjectPage"));
+const VillageSkillsActiveLearningPage = lazy(() => import("./pages/student/subjects/VillageSkillsActiveLearningPage"));
 const GameLevelPage = lazy(() => import("./pages/student/games/GameLevelPage"));
 const LeaderboardPage = lazy(() => import("./pages/student/LeaderboardPage"));
 const PhysicsPage = lazy(() => import("./pages/student/PhysicsPage"));
@@ -73,6 +74,9 @@ const MathMissions = lazy(() => import("./pages/student/games/MathMissions"));
 const TechnologyVillageLightUp = lazy(() => import("./pages/student/games/TechnologyVillageLightUp"));
 const TechnologySystemBuilder = lazy(() => import("./pages/student/games/TechnologySystemBuilder"));
 const TechnologyDebugDungeon = lazy(() => import("./pages/student/games/TechnologyDebugDungeon"));
+const SmartFarmerGame = lazy(() => import("./pages/student/games/SmartFarmerGame"));
+const WaterSaverGame = lazy(() => import("./pages/student/games/WaterSaverGame"));
+const VillageMarketGame = lazy(() => import("./pages/student/games/VillageMarketGame"));
 const TeacherDashboard = lazy(() => import("./pages/teacher/TeacherDashboard"));
 const TeacherClassesPage = lazy(() => import("./pages/teacher/TeacherClassesPage"));
 const TeacherClassDetailPage = lazy(() => import("./pages/teacher/TeacherClassDetailPage"));
@@ -276,6 +280,21 @@ const App = () => (
                     <VillageSkillsPage />
                   </ProtectedRoute>
                 } />
+                <Route path="/student/village-skills/smart-farmer" element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <SmartFarmerGame />
+                  </ProtectedRoute>
+                } />
+                <Route path="/student/village-skills/water-saver" element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <WaterSaverGame />
+                  </ProtectedRoute>
+                } />
+                <Route path="/student/village-skills/market-manager" element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <VillageMarketGame />
+                  </ProtectedRoute>
+                } />
                 <Route path="/student/tasks" element={
                   <ProtectedRoute allowedRoles={["student"]}>
                     <TasksPage />
@@ -375,6 +394,11 @@ const App = () => (
                 <Route path="/learn/village-skills/levels" element={
                   <ProtectedRoute allowedRoles={["student"]}>
                     <VillageSkillsSubjectPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/learn/village-skills/active-learning" element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <VillageSkillsActiveLearningPage />
                   </ProtectedRoute>
                 } />
 

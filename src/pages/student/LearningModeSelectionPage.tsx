@@ -82,11 +82,11 @@ const subjectConfig: Record<string, {
     passivePath: "/learn/entrepreneurship/read",
     gamifiedPath: "/student/entrepreneurship"
   },
-  "village-skills": { 
-    icon: TreePine, 
-    title: "Village Skills", 
+  "village-skills": {
+    icon: TreePine,
+    title: "Village Skills",
     color: "secondary",
-    activePath: "/learn/village-skills/levels",
+    activePath: "/learn/village-skills/active-learning",
     passivePath: "/learn/village-skills/read",
     gamifiedPath: "/student/village-skills"
   },
