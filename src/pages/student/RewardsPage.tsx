@@ -107,7 +107,9 @@ export default function RewardsPage() {
             width: 25px !important;
           }
           .hero-coin-image {
-            margin: 0 auto !important;
+            max-width: 130px !important;
+            padding-left: 4px !important;
+            margin: auto 0 auto auto !important;
           }
           .edu-coin-product-price {
             width: 16px !important;
