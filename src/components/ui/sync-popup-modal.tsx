@@ -256,4 +256,7 @@ export function SyncPopupModal({
       `}</style>
     </>
   );
+
+  // Render modal using portal to ensure it's positioned relative to viewport
+  return createPortal(modalContent, document.body);
 }
