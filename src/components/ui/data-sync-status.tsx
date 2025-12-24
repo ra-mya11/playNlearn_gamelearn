@@ -276,25 +276,25 @@ export function DataSyncStatus({ className }: DataSyncStatusProps) {
           'border border-transparent transition-all duration-200',
           'text-xs sm:text-sm font-medium',
           'disabled:opacity-70 disabled:cursor-not-allowed',
-          'active:scale-95 transition-transform',
+          'hover:opacity-80 active:scale-95 transition-transform',
           getButtonClasses(),
           className
         )}
       >
         {syncStatus === 'synced' ? (
-          <Cloud className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+          <Cloud className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
         ) : (
           <RefreshCw
             className={cn(
-              'h-4 w-4 flex-shrink-0',
-              syncStatus === 'syncing' && 'animate-spin',
+              'h-5 w-5 flex-shrink-0',
+              syncStatus === 'syncing' && 'animate-spin-smooth',
               getIconColor()
             )}
             aria-hidden="true"
           />
         )}
         <span className={cn(
-          'hidden sm:inline whitespace-nowrap',
+          'hidden sm:inline whitespace-nowrap font-semibold',
           getIconColor()
         )}>
           {displayText()}
