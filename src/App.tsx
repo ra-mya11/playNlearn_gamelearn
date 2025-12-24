@@ -7,6 +7,7 @@ import { lazy, Suspense } from "react";
 import { OfflineIndicator, InstallPrompt } from "@/components/pwa";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { WalletProvider } from "@/contexts/WalletContext";
+import { I18nProvider } from "@/contexts/I18nContext";
 import { ProtectedRoute } from "@/components/auth";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import '@/i18n/config';
