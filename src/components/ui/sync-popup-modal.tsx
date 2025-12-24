@@ -511,12 +511,12 @@ export function SyncPopupModal({
           }
         }
 
-        @keyframes pulse-subtle {
+        @keyframes smooth-pulse {
           0%, 100% {
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+            opacity: 1;
           }
           50% {
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+            opacity: 0.6;
           }
         }
 
@@ -540,10 +540,6 @@ export function SyncPopupModal({
 
         .animate-success-check-small {
           animation: success-check-small 0.3s ease-out forwards;
-        }
-
-        .animate-pulse-subtle {
-          animation: pulse-subtle 2s ease-in-out infinite;
         }
 
         .animate-fade-in {
