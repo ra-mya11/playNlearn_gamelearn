@@ -163,6 +163,47 @@ export function CustomerFirst({ onComplete, onBack }: { onComplete: (score: numb
 
   const topComplaints = FEEDBACK_BANK.slice(0, 3);
 
+  // Exit Confirmation Dialog
+  if (showExitConfirm) {
+    return (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="bg-card rounded-2xl border border-border p-6 max-w-sm w-full space-y-4">
+          <div className="text-center">
+            <div className="text-5xl mb-3">⚠️</div>
+            <h3 className="font-heading text-xl font-bold text-foreground">Quit Game?</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              You have completed {gameState.roundHistory.length} round{gameState.roundHistory.length !== 1 ? "s" : ""}. You won't get credit for this attempt.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
+              Your progress so far: <span className="font-semibold text-secondary">₹{gameState.totalRevenue}</span> earned
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowExitConfirm(false)}
+              className="flex-1 py-2 bg-card border border-border text-foreground hover:border-primary/50 font-semibold rounded-lg transition-all"
+            >
+              Continue Game
+            </button>
+            <button
+              onClick={() => {
+                setShowExitConfirm(false);
+                onBack?.();
+              }}
+              className="flex-1 py-2 bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 font-semibold rounded-lg transition-all"
+            >
+              Quit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ===== RENDER: SPLASH SCREEN =====
   if (gameState.phase === "splash") {
     return (
