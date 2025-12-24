@@ -109,7 +109,7 @@ export default function PhysicsSubjectPage() {
         <div className="mb-4">
           <h3 className="font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
             <Zap className="h-5 w-5 text-accent" />
-            Game Levels
+            {t('common.gameLevels')}
           </h3>
         </div>
 
