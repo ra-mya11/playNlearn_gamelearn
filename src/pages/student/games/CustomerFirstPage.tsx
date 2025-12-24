@@ -12,6 +12,10 @@ export default function CustomerFirstPage() {
           state: { gameCompleted: true, score }
         });
       }}
+      onBack={() => {
+        // Navigate back to Entrepreneurship page when user exits game
+        navigate("/student/entrepreneurship");
+      }}
     />
   );
 }
