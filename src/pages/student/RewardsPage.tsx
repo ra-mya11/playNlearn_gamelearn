@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EduCoin, EduCoinDisplay } from "@/components/ui/edu-coin";
+import { useTranslation } from "react-i18next";
 import {
   Lock,
   TrendingUp,
