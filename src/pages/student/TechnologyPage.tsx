@@ -1,10 +1,6 @@
 import { SubjectLayout } from "@/components/student/SubjectLayout";
-import { GameCard } from "@/components/ui/game-card";
-import { TechnologyActiveLearning } from "@/components/active-learning/TechnologyActiveLearning";
-import { VillageLightUp, DebugDungeon, SystemBuilder } from "@/components/games";
 import { Laptop, Zap, Bug, Cog } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 const techGames = [
   {
