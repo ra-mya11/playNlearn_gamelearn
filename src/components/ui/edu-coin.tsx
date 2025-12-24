@@ -26,6 +26,7 @@ export function EduCoin({
   size = "md",
   animated = false,
   className,
+  imgClassName,
   showLabel = false,
 }: EduCoinProps) {
   const dimension = sizeMap[size];
@@ -49,7 +50,8 @@ export function EduCoin({
         height={dimension}
         className={cn(
           "drop-shadow-lg flex-shrink-0",
-          animated && "edu-coin-animated"
+          animated && "edu-coin-animated",
+          imgClassName
         )}
         style={{
           aspectRatio: "1 / 1",
