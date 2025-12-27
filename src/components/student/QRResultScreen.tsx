@@ -1,7 +1,7 @@
 /**
  * QR RESULT SCREEN
- * Full-page screen showing generated QR code with download/save options
- * Replaces modal for better navigation and offline use
+ * Modal overlay showing generated QR code with download/save options
+ * Shows as a centered card with blurred marketplace background
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,24 +38,19 @@ interface StatusItem {
 
 const statusItems: StatusItem[] = [
   {
-    label: "Learning Progress Verified",
-    translationKey: "redemption.status.verified",
-    index: 0,
-  },
-  {
     label: "EduCoins Reserved",
     translationKey: "redemption.status.reserved",
-    index: 1,
+    index: 0,
   },
   {
     label: "Product Locked for You",
     translationKey: "redemption.status.locked",
-    index: 2,
+    index: 1,
   },
   {
     label: "Offline Verification Enabled",
     translationKey: "redemption.status.offlineEnabled",
-    index: 3,
+    index: 2,
   },
 ];
 
@@ -174,55 +170,57 @@ export function QRResultScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Header with Back Navigation */}
-      <div className="sticky top-0 z-40 border-b border-border/30 bg-background/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <button
-            onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-card transition-colors"
-            title="Back to Rewards"
-          >
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
+    <div className="fixed inset-0 z-50 overflow-auto bg-black/40 backdrop-blur-sm flex items-center justify-center pointer-events-none p-4">
+      {/* Modal Card Container */}
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-auto rounded-3xl bg-gradient-to-br from-card/95 via-card/85 to-card/75 backdrop-blur-xl border-2 border-primary/20 shadow-2xl shadow-primary/50 pointer-events-auto animate-fade-in">
+        
+        {/* Header with Back Navigation */}
+        <div className="sticky top-0 z-40 border-b border-border/30 bg-background/40 backdrop-blur-xl rounded-t-3xl">
+          <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6">
+            <button
+              onClick={onBack}
+              className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-card transition-colors"
+              title="Back to Rewards"
+            >
+              <ArrowLeft className="h-5 w-5 text-foreground" />
+            </button>
 
-          <h1 className="flex-1 text-center font-heading text-lg font-semibold text-foreground">
-            {t("redemption.readyForCollection", {
-              defaultValue: "Reward Ready for Collection",
-            })}
-          </h1>
+            <h1 className="flex-1 text-center font-heading text-base font-semibold text-foreground whitespace-nowrap">
+              {t("redemption.readyForCollection", {
+                defaultValue: "Reward Ready",
+              })}
+            </h1>
 
-          {/* Offline Indicator */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg">
-            {isOnline ? (
-              <Wifi className="h-5 w-5 text-secondary" />
-            ) : (
-              <WifiOff className="h-5 w-5 text-accent" />
-            )}
+            {/* Close Button */}
+            <button
+              onClick={onBack}
+              className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-card transition-colors"
+              title="Close"
+            >
+              <X className="h-5 w-5 text-foreground" />
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="space-y-6 px-4 py-8 sm:px-6 sm:py-10">
-        {/* QR Code Card */}
-        <Card className="border-primary/20 bg-card/40 backdrop-blur-sm overflow-hidden">
-          <div className="space-y-4 p-6">
+        {/* Main Content - Scrollable */}
+        <div className="space-y-4 px-4 py-6 sm:px-6">
+          {/* QR Code Card */}
+          <div className="space-y-4 rounded-2xl border border-primary/20 bg-gradient-to-br from-white/10 to-white/5 p-4">
             {/* QR Code Container */}
             <div className="flex justify-center">
               <div
                 ref={qrRef}
-                className="flex items-center justify-center rounded-lg bg-white p-4 shadow-lg"
+                className="flex items-center justify-center rounded-lg bg-white p-3 shadow-lg"
               >
                 {QRCodeComponent ? (
                   <QRCodeComponent
                     value={redemptionData.redemptionCode}
-                    size={240}
+                    size={200}
                     level="H"
                     includeMargin={true}
                   />
                 ) : (
-                  <div className="flex h-64 w-64 items-center justify-center rounded bg-muted">
+                  <div className="flex h-56 w-56 items-center justify-center rounded bg-muted">
                     <p className="text-sm text-muted-foreground">QR Code</p>
                   </div>
                 )}
@@ -230,116 +228,101 @@ export function QRResultScreen({
             </div>
 
             {/* Instructions */}
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-xs text-muted-foreground">
               {t("redemption.showQRToTeacher", {
                 defaultValue:
                   "Show this QR to your teacher to collect your reward.",
               })}
             </p>
           </div>
-        </Card>
 
-        {/* Redemption Code Card */}
-        <Card className="border-primary/20 bg-card/40 backdrop-blur-sm">
-          <div className="space-y-3 p-6">
+          {/* Redemption Code Card */}
+          <div className="space-y-3 rounded-2xl border border-primary/20 bg-gradient-to-br from-white/10 to-white/5 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("redemption.redemptionCode", {
                 defaultValue: "Redemption Code",
               })}
             </p>
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-primary/5 p-4 border border-primary/20">
-              <code className="flex-1 font-mono text-lg font-bold text-primary">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-primary/5 p-3 border border-primary/20">
+              <code className="flex-1 font-mono text-sm font-bold text-primary">
                 {redemptionData.redemptionCode}
               </code>
               <button
                 onClick={handleCopyCode}
-                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg hover:bg-primary/10 transition-colors"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg hover:bg-primary/10 transition-colors"
                 title="Copy code"
               >
                 {codeCopied ? (
-                  <Check className="h-5 w-5 text-secondary" />
+                  <Check className="h-4 w-4 text-secondary" />
                 ) : (
-                  <Copy className="h-5 w-5 text-primary" />
+                  <Copy className="h-4 w-4 text-primary" />
                 )}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {t("redemption.useOfflineNote", {
-                defaultValue: "💾 Code saved offline – use anytime",
-              })}
-            </p>
           </div>
-        </Card>
 
-        {/* Product Info */}
-        <Card className="border-primary/20 bg-card/40 backdrop-blur-sm">
-          <div className="space-y-2 p-6">
+          {/* Product Info */}
+          <div className="space-y-2 rounded-2xl border border-primary/20 bg-gradient-to-br from-white/10 to-white/5 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("redemption.product", { defaultValue: "Product" })}
             </p>
-            <p className="text-base font-semibold text-foreground">
+            <p className="text-sm font-semibold text-foreground">
               {redemptionData.productName}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {redemptionData.coinsRedeemed}{" "}
-              {t("redemption.coinsSpent", { defaultValue: "EduCoins spent" })}
-            </p>
           </div>
-        </Card>
 
-        {/* Status Checklist */}
-        <Card className="border-secondary/20 bg-card/40 backdrop-blur-sm">
-          <div className="space-y-3 p-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+          {/* Status Checklist */}
+          <div className="space-y-3 rounded-2xl border border-secondary/20 bg-gradient-to-br from-white/10 to-white/5 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
               {t("redemption.verificationStatus", {
                 defaultValue: "Verification Status",
               })}
             </p>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {statusItems.map((item) => (
                 <div
                   key={item.translationKey}
-                  className={`flex items-center gap-3 rounded-lg bg-card/30 p-3 transition-all duration-300 ${
+                  className={`flex items-center gap-3 rounded-lg bg-card/30 p-2 transition-all duration-300 ${
                     visibleStatusItems > item.index
                       ? "translate-x-0 opacity-100"
                       : "-translate-x-4 opacity-0"
                   }`}
                 >
-                  <div className="h-6 w-6 flex-shrink-0 rounded-full bg-secondary/30 flex items-center justify-center">
-                    <div className="h-3 w-3 rounded-full bg-secondary" />
+                  <div className="h-5 w-5 flex-shrink-0 rounded-full bg-secondary/30 flex items-center justify-center">
+                    <div className="h-2.5 w-2.5 rounded-full bg-secondary" />
                   </div>
-                  <span className="text-sm text-foreground">
+                  <span className="text-xs text-foreground">
                     {t(item.translationKey, { defaultValue: item.label })}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-        </Card>
 
-        {/* Action Buttons */}
-        <div className="space-y-3 pb-6">
-          <Button
-            onClick={handleDownloadQR}
-            disabled={downloadProgress}
-            className="w-full gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/95 hover:to-primary/85 text-white font-semibold py-3 text-base transition-all"
-          >
-            <Download className="h-5 w-5" />
-            {downloadProgress
-              ? t("common.downloading", { defaultValue: "Downloading..." })
-              : t("redemption.downloadQR", { defaultValue: "Download QR Code" })}
-          </Button>
+          {/* Action Buttons */}
+          <div className="space-y-2 pt-2">
+            <Button
+              onClick={handleDownloadQR}
+              disabled={downloadProgress}
+              className="w-full gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/95 hover:to-primary/85 text-white font-semibold py-2 text-sm transition-all"
+            >
+              <Download className="h-4 w-4" />
+              {downloadProgress
+                ? t("common.downloading", { defaultValue: "Downloading..." })
+                : t("redemption.downloadQR", { defaultValue: "Download QR" })}
+            </Button>
 
-          <Button
-            onClick={onSaveToWallet}
-            variant="outline"
-            className="w-full gap-2 rounded-xl py-3 text-base font-semibold border-primary/30 hover:border-primary/50"
-          >
-            <span>💾</span>
-            {t("redemption.saveToWallet", {
-              defaultValue: "Save to My Rewards",
-            })}
-          </Button>
+            <Button
+              onClick={onSaveToWallet}
+              variant="outline"
+              className="w-full gap-2 rounded-xl py-2 text-sm font-semibold border-primary/30 hover:border-primary/50"
+            >
+              <span>💾</span>
+              {t("redemption.saveToWallet", {
+                defaultValue: "Save to My Rewards",
+              })}
+            </Button>
+          </div>
 
           {/* Offline Notice */}
           <div className="flex items-start gap-2 rounded-lg border border-accent/20 bg-accent/5 p-3">

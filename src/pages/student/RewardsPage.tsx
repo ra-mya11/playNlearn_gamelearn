@@ -94,29 +94,15 @@ export default function RewardsPage() {
     setShowConfirmationModal(true);
   };
 
-  // Handle confirmation - starts loading sequence
+  // Handle QR generation from modal
+  const handleQRGenerated = (redemptionData: RedemptionData) => {
+    setGeneratedRedemption(redemptionData);
+    setShowQRResultScreen(true);
+  };
+
+  // Handle confirmation - just closes modal, QR generation happens in modal
   const handleConfirmRedemption = async () => {
-    if (!selectedProduct) return;
-
-    setShowConfirmationModal(false);
-    setShowLoadingModal(true);
-
-    // Simulate 5-second QR generation process
-    setTimeout(() => {
-      setShowLoadingModal(false);
-
-      // Create redemption data
-      const redemptionData = createRedemptionData(
-        "student_" + Date.now(), // Placeholder student ID
-        selectedProduct.id,
-        selectedProduct.name,
-        selectedProduct.educoinsCost
-      );
-
-      setGeneratedRedemption(redemptionData);
-      // Show QR Result Screen instead of modal
-      setShowQRResultScreen(true);
-    }, 5000);
+    // Modal handles everything now
   };
 
   // Handle saving redemption to wallet
@@ -405,6 +391,7 @@ export default function RewardsPage() {
           product={selectedProduct}
           currentBalance={currentBalance}
           isLoading={false}
+          onGenerateQR={handleQRGenerated}
         />
       )}
 
@@ -579,14 +566,14 @@ export default function RewardsPage() {
                 </div>
               </div>
             </div>
-            {/* ============ PRIMARY CTA BUTTON ============ */}
+            {/* ============ QR WALLET BUTTON ============ */}
             <div className="mb-6 slide-up" style={{ animationDelay: "50ms" }}>
               <Button
                 size="lg"
                 onClick={handleOpenMyRewards}
-                className="w-full bg-gradient-to-r from-primary to-primary/80 text-sm"
+                className="w-full bg-gradient-to-r from-secondary to-secondary/80 text-sm hover:from-secondary/95 hover:to-secondary/85"
               >
-                {t('rewards.redeemRewards')} {savedRedemptions.length > 0 && `(${savedRedemptions.length})`}
+                <span>📱</span> QR Wallet {savedRedemptions.length > 0 && `(${savedRedemptions.length})`}
               </Button>
             </div>
 
@@ -640,11 +627,13 @@ export default function RewardsPage() {
                   return (
                     <Card
                       key={product.id}
-                      className={`relative glass-card border overflow-hidden rounded-2xl transition-all duration-300 flex flex-col ${canAfford
-                        ? "border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1"
+                      onClick={() => canAfford && handleRedeem(product)}
+                      onPointerDown={() => canAfford && handleRedeem(product)}
+                      className={`relative glass-card border overflow-hidden rounded-2xl transition-all duration-300 flex flex-col cursor-pointer ${canAfford
+                        ? "border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1 active:scale-95"
                         : almostThere
                           ? "border-primary/40 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/15"
-                          : "border-border/30 opacity-75"
+                          : "border-border/30 opacity-75 cursor-not-allowed"
                         }`}
                       style={{ animationDelay: `${200 + index * 40}ms` }}
                     >
