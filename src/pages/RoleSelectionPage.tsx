@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { GraduationCap, BookOpen, Users, Settings } from "lucide-react";
+import { GraduationCap, BookOpen, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { LanguageSwitchButton } from "@/components/LanguageSwitchButton";
 import mascotWelcome from "@/assets/mascot-welcome.png";
 
 type Role = "student" | "teacher" | "parent";
