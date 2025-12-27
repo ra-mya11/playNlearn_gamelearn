@@ -44,7 +44,7 @@ const TechnologyActiveLearningPage = lazy(() => import("./pages/student/subjects
 const VillageSkillsSubjectPage = lazy(() => import("./pages/student/subjects/VillageSkillsSubjectPage"));
 const VillageSkillsActiveLearningPage = lazy(() => import("./pages/student/subjects/VillageSkillsActiveLearningPage"));
 const GameLevelPage = lazy(() => import("./pages/student/games/GameLevelPage"));
-const LeaderboardPage = lazy(() => import("./pages/student/LeaderboardPage"));
+const VillageImpactBoard = lazy(() => import("./pages/student/VillageImpactBoard"));
 const PhysicsPage = lazy(() => import("./pages/student/PhysicsPage"));
 const ChemistryPage = lazy(() => import("./pages/student/ChemistryPage"));
 const BiologyPage = lazy(() => import("./pages/student/BiologyPage"));
