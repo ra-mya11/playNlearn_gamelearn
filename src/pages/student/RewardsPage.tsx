@@ -391,6 +391,7 @@ export default function RewardsPage() {
           product={selectedProduct}
           currentBalance={currentBalance}
           isLoading={false}
+          onGenerateQR={handleQRGenerated}
         />
       )}
 
