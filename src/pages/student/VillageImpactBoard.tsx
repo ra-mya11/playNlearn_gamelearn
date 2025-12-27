@@ -382,11 +382,11 @@ export default function VillageImpactBoard() {
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="3"
-                                strokeDasharray={`${(entry.contribution_score / 100) * 125.6} 125.6`}
+                                strokeDasharray={`${Math.max((Math.max(entry.contribution_score || 0, 0) / 100) * 125.6, 0)} 125.6`}
                                 className="text-primary transition-all duration-500"
                               />
                             </svg>
-                            <span className="absolute font-bold text-sm text-primary">{Math.min(Math.floor(entry.contribution_score / 10), 99)}</span>
+                            <span className="absolute font-bold text-sm text-primary">{Math.min(Math.floor(Math.max(entry.contribution_score || 0, 0) / 10), 99)}</span>
                           </div>
                         </div>
                       </div>
