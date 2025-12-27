@@ -2,6 +2,7 @@
  * REDEMPTION CONFIRMATION MODAL
  * Initial step when student clicks "Redeem" on a product
  * Shows glassmorphism design with product details and balance check
+ * Handles QR generation internally for instant UX
  */
 
 import {
@@ -13,8 +14,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { createRedemptionData } from "@/lib/qr-utils";
 
 interface Product {
   id: string;
@@ -31,6 +34,7 @@ interface RedemptionConfirmationModalProps {
   product: Product;
   currentBalance: number;
   isLoading?: boolean;
+  onGenerateQR?: (redemptionData: any) => void;
 }
 
 export function RedemptionConfirmationModal({
@@ -40,9 +44,34 @@ export function RedemptionConfirmationModal({
   product,
   currentBalance,
   isLoading = false,
+  onGenerateQR,
 }: RedemptionConfirmationModalProps) {
   const { t } = useTranslation();
+  const [isGenerating, setIsGenerating] = useState(false);
   const canAfford = currentBalance >= product.educoinsCost;
+
+  // Handle Generate QR click - generates QR inside modal
+  const handleGenerateQRClick = async () => {
+    setIsGenerating(true);
+
+    // Simulate 5-second QR generation process
+    setTimeout(() => {
+      // Create redemption data
+      const redemptionData = createRedemptionData(
+        "student_" + Date.now(), // Placeholder student ID
+        product.id,
+        product.name,
+        product.educoinsCost
+      );
+
+      // Notify parent about the generated redemption
+      onGenerateQR?.(redemptionData);
+
+      // Close this modal
+      onClose();
+      setIsGenerating(false);
+    }, 5000);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
