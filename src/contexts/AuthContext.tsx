@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 
 type AppRole = "student" | "teacher" | "parent";
 
@@ -44,6 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUserData = async (userId: string) => {
+    // Skip if Supabase is not configured
+    if (!hasSupabaseConfig()) {
+      console.warn("Supabase not configured - skipping profile fetch");
+      // Set a mock profile for demo purposes
+      setProfile({
+        id: userId,
+        full_name: "Demo User",
+        avatar_url: null,
+        village: "Demo Village",
+        grade: null,
+        school: null,
+        phone: null,
+      });
+      setRole("student");
+      return;
+    }
+
     try {
       // Fetch profile
       const { data: profileData, error: profileError } = await supabase
@@ -72,6 +89,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error in fetchUserData:", error);
+      // Set fallback demo data
+      setProfile({
+        id: userId,
+        full_name: "Demo User",
+        avatar_url: null,
+        village: "Demo Village",
+        grade: null,
+        school: null,
+        phone: null,
+      });
+      setRole("student");
     }
   };
 

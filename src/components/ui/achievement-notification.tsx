@@ -4,7 +4,6 @@ import { GameBadge } from "./game-badge";
 import { ConfettiEffect } from "./confetti-effect";
 import { Trophy, Sparkles, X } from "lucide-react";
 import { Button } from "./button";
-import mascotCelebration from "@/assets/mascot-celebration.png";
 
 interface AchievementNotificationProps {
   show: boolean;
@@ -73,7 +72,7 @@ export function AchievementNotification({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2"
+            className="absolute top-2 right-2 sm:top-1"
             onClick={() => {
               setIsVisible(false);
               setTimeout(onClose, 300);
@@ -84,9 +83,9 @@ export function AchievementNotification({
 
           {/* Mascot */}
           <img
-            src={mascotCelebration}
+            src="https://cdn.builder.io/api/v1/image/assets%2F1de5161f1b654d15a4bc79211c4f3751%2Fc9ff32522ad94eada11793a60c127d52"
             alt="Celebration"
-            className="w-24 h-24 mx-auto mb-4 animate-bounce"
+            className="w-24 h-24 sm:w-[89px] mx-auto mb-4 sm:mt-3.5 animate-bounce"
           />
 
           {/* Badge Icon */}
