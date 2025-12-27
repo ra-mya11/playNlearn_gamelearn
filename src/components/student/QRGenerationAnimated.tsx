@@ -6,8 +6,9 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RotateCw, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
+import { PremiumSyncRingLoader } from "./PremiumSyncRingLoader";
 
 interface Step {
   label: string;
@@ -122,23 +123,9 @@ export function QRGenerationAnimated({
       {/* Center Card */}
       <div className="relative w-full max-w-md px-4">
         <div className="rounded-3xl bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-xl border-2 border-primary/20 p-8 shadow-2xl shadow-primary/30">
-          {/* Loading Icon */}
+          {/* Loading Icon - Premium Sync Ring Loader */}
           <div className="flex justify-center mb-8">
-            <div className="relative w-20 h-20">
-              <RotateCw
-                className={`absolute inset-2 text-primary transition-transform ${
-                  showSuccess ? "animate-none" : "animate-spin"
-                }`}
-                strokeWidth={1.5}
-              />
-              {showSuccess && (
-                <div className="absolute inset-0 flex items-center justify-center animate-scale-in">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-secondary/30 to-secondary/10 flex items-center justify-center border-2 border-secondary">
-                    <Check className="w-10 h-10 text-secondary" />
-                  </div>
-                </div>
-              )}
-            </div>
+            <PremiumSyncRingLoader isLoading={!showSuccess} showSuccess={showSuccess} />
           </div>
 
           {/* Title */}
