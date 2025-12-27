@@ -94,29 +94,10 @@ export default function RewardsPage() {
     setShowConfirmationModal(true);
   };
 
-  // Handle confirmation - starts loading sequence
+  // Handle confirmation - just passes to modal, modal handles QR generation
   const handleConfirmRedemption = async () => {
-    if (!selectedProduct) return;
-
-    setShowConfirmationModal(false);
-    setShowLoadingModal(true);
-
-    // Simulate 5-second QR generation process
-    setTimeout(() => {
-      setShowLoadingModal(false);
-
-      // Create redemption data
-      const redemptionData = createRedemptionData(
-        "student_" + Date.now(), // Placeholder student ID
-        selectedProduct.id,
-        selectedProduct.name,
-        selectedProduct.educoinsCost
-      );
-
-      setGeneratedRedemption(redemptionData);
-      // Show QR Result Screen instead of modal
-      setShowQRResultScreen(true);
-    }, 5000);
+    // Modal will handle the QR generation internally
+    // This function is now just for validation
   };
 
   // Handle saving redemption to wallet
