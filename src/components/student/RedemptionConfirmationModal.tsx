@@ -176,21 +176,26 @@ export function RedemptionConfirmationModal({
         {/* Actions - Stacked layout for clarity */}
         <DialogFooter className="flex flex-col gap-3 sm:gap-3">
           <Button
-            onClick={onConfirm}
-            disabled={!canAfford || isLoading}
-            className="w-full bg-gradient-to-r from-secondary to-secondary/90 hover:from-secondary/95 hover:to-secondary/85 text-white font-semibold rounded-xl py-6 text-base transition-all"
+            onClick={handleGenerateQRClick}
+            disabled={!canAfford || isGenerating}
+            className="w-full bg-gradient-to-r from-secondary to-secondary/90 hover:from-secondary/95 hover:to-secondary/85 text-white font-semibold rounded-xl py-6 text-base transition-all disabled:opacity-50"
             size="lg"
           >
-            {isLoading
-              ? t("common.generating", { defaultValue: "Generating..." })
-              : t("redemption.generateQrCode", {
-                  defaultValue: "Generate QR Code",
-                })}
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t("common.generating", { defaultValue: "Generating..." })}
+              </>
+            ) : (
+              t("redemption.generateQrCode", {
+                defaultValue: "Generate QR Code",
+              })
+            )}
           </Button>
           <Button
             variant="outline"
             onClick={onClose}
-            disabled={isLoading}
+            disabled={isGenerating}
             className="w-full rounded-xl py-2.5"
           >
             {t("common.cancel", { defaultValue: "Cancel" })}
