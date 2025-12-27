@@ -325,57 +325,120 @@ export function RedemptionQRScanner({
               <DialogTitle>
                 {actionResult === "verified"
                   ? t("teacher.verificationSuccess", {
-                      defaultValue: "Verified!",
+                      defaultValue: "Reward Verified!",
                     })
                   : t("teacher.rejectionConfirmed", {
-                      defaultValue: "Rejected",
+                      defaultValue: "Redemption Declined",
                     })}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="flex flex-col items-center gap-4 py-6">
+            <div className={`flex flex-col items-center gap-4 py-8 ${showResultAnimation ? "animate-success-pulse" : ""}`}>
               {actionResult === "verified" ? (
                 <>
-                  <div className="rounded-full bg-green-400/20 p-4">
-                    <CheckCircle2 className="h-12 w-12 text-green-400" />
+                  <div className={`rounded-full p-6 transition-all ${
+                    showResultAnimation
+                      ? "bg-secondary/20 scale-100"
+                      : "bg-secondary/10 scale-95"
+                  }`}>
+                    <CheckCircle2
+                      className={`h-16 w-16 text-secondary transition-all ${
+                        showResultAnimation ? "animate-bounce" : ""
+                      }`}
+                    />
                   </div>
-                  <div className="text-center">
-                    <h3 className="font-heading text-lg font-semibold text-foreground mb-2">
+                  <div className="text-center space-y-2">
+                    <h3 className="font-heading text-2xl font-bold text-foreground">
                       {t("teacher.rewardHandedOver", {
-                        defaultValue: "Reward handed over successfully!",
+                        defaultValue: "Reward Given!",
                       })}
                     </h3>
                     <p className="text-sm text-muted-foreground">
+                      {scannedData?.studentName || "Student"} can now collect their reward
+                    </p>
+                    <code className="block font-mono text-xs text-primary mt-2">
                       {scannedData?.redemptionCode}
+                    </code>
+                  </div>
+
+                  {/* Success feedback */}
+                  <div className="w-full rounded-lg bg-secondary/10 border border-secondary/20 p-4 text-center">
+                    <p className="text-sm text-secondary font-medium">
+                      ✓ {t("teacher.offlineTransaction", {
+                        defaultValue: "This transaction has been saved offline",
+                      })}
                     </p>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="rounded-full bg-red-400/20 p-4">
-                    <XCircle className="h-12 w-12 text-red-400" />
+                  <div className="rounded-full bg-destructive/10 p-6">
+                    <XCircle className="h-16 w-16 text-destructive" />
                   </div>
-                  <div className="text-center">
-                    <h3 className="font-heading text-lg font-semibold text-foreground mb-2">
-                      {t("teacher.redemptionRejected", {
-                        defaultValue: "Redemption Rejected",
+                  <div className="text-center space-y-2">
+                    <h3 className="font-heading text-2xl font-bold text-foreground">
+                      {t("teacher.redemptionDeclined", {
+                        defaultValue: "Redemption Declined",
                       })}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {rejectionReason || "No reason provided"}
+                      {scannedData?.studentName || "Student"} has been notified
                     </p>
                   </div>
+
+                  {/* Rejection reason shown */}
+                  {rejectionReason && (
+                    <div className="w-full rounded-lg bg-destructive/5 border border-destructive/20 p-4">
+                      <p className="text-xs font-semibold text-destructive/70 mb-2">
+                        {t("teacher.reasonGiven", { defaultValue: "Reason" })}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {rejectionReason}
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
             </div>
 
             <DialogFooter>
-              <Button onClick={handleReset} className="w-full bg-secondary hover:bg-secondary/90">
+              <Button
+                onClick={handleReset}
+                className={`w-full ${
+                  actionResult === "verified"
+                    ? "bg-secondary hover:bg-secondary/90"
+                    : "bg-primary hover:bg-primary/90"
+                }`}
+              >
                 {t("teacher.scanAnother", {
                   defaultValue: "Scan Another QR",
                 })}
               </Button>
             </DialogFooter>
+
+            <style>{`
+              @keyframes success-pulse {
+                0% {
+                  opacity: 0;
+                  transform: scale(0.95);
+                }
+                100% {
+                  opacity: 1;
+                  transform: scale(1);
+                }
+              }
+
+              .animate-success-pulse {
+                animation: success-pulse 0.6s ease-out;
+              }
+
+              @media (prefers-reduced-motion: reduce) {
+                .animate-success-pulse {
+                  animation: none;
+                  opacity: 1;
+                }
+              }
+            `}</style>
           </>
         )}
       </DialogContent>
