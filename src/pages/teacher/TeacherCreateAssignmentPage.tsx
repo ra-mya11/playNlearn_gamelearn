@@ -54,26 +54,43 @@ export default function TeacherCreateAssignmentPage() {
     setIsLoading(true);
 
     try {
-      console.log('Creating assignment with localStorage only...');
+      console.log('=== TEACHER ASSIGNMENT CREATION DEBUG ===');
+      console.log('Form data:', formData);
       
-      // Use localStorage directly
+      // Create assignment object
       const assignment = {
         id: `assignment_${Date.now()}`,
         title: formData.title,
         description: formData.description,
         subject: formData.subject,
         due_date: formData.dueDate || null,
-        teacher_id: user.id,
+        teacher_id: 'teacher_001',
         is_active: true,
         created_at: new Date().toISOString()
       };
       
-      const assignments = JSON.parse(localStorage.getItem('assignments') || '[]');
+      console.log('New assignment to save:', assignment);
+      
+      // Save to localStorage with a unique key to avoid conflicts
+      const storageKey = 'playnlearn_assignments';
+      const assignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
       assignments.push(assignment);
-      localStorage.setItem('assignments', JSON.stringify(assignments));
+      localStorage.setItem(storageKey, JSON.stringify(assignments));
       
       console.log('Assignment saved to localStorage:', assignment);
       console.log('All assignments in localStorage:', assignments);
+      
+      // Force trigger storage event for cross-tab communication
+      console.log('Triggering storage event...');
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: storageKey,
+        newValue: JSON.stringify(assignments),
+        storageArea: localStorage
+      }));
+      
+      // Also try custom event as backup
+      window.dispatchEvent(new CustomEvent('assignmentCreated', { detail: assignment }));
+      console.log('Events dispatched');
       
       toast.success("Assignment created successfully!");
       navigate("/teacher/classes");

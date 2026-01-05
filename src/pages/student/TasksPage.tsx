@@ -13,45 +13,109 @@ import {
 import { usePlayCoins } from "@/hooks/use-playcoins";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function TasksPage() {
   const { t } = useTranslation();
   const { wallet } = usePlayCoins();
+  const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
+  const [submittedAssignments, setSubmittedAssignments] = useState(new Set());
+  const [submissionStatuses, setSubmissionStatuses] = useState(new Map());
 
-  // Load assignments from Supabase
   useEffect(() => {
     loadAssignments();
+
+    // Listen for storage changes (cross-tab communication)
+    const handleStorageChange = (event: StorageEvent) => {
+      console.log('Storage event received:', event.key, event.newValue);
+      if (event.key === 'playnlearn_assignments') {
+        console.log('Assignments storage changed, reloading...');
+        loadAssignments();
+      }
+    };
+
+    // Listen for custom events (same-tab communication)
+    const handleCustomEvent = (event: any) => {
+      console.log('Custom assignment event received:', event.detail);
+      loadAssignments();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('assignmentCreated', handleCustomEvent);
+
+    // Auto-refresh assignments when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, refreshing assignments...');
+        loadAssignments();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also refresh every 5 seconds
+    const interval = setInterval(() => {
+      console.log('Auto-refresh triggered');
+      loadAssignments();
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('assignmentCreated', handleCustomEvent);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
   }, []);
 
   const loadAssignments = async () => {
     try {
-      // Check localStorage first
-      const storedAssignments = localStorage.getItem('assignments');
+      console.log('Loading assignments from localStorage...');
+      
+      const storageKey = 'playnlearn_assignments';
+      const storedAssignments = localStorage.getItem(storageKey);
       console.log('Raw localStorage assignments:', storedAssignments);
       
       if (storedAssignments) {
         const parsed = JSON.parse(storedAssignments);
         console.log('Parsed assignments:', parsed);
-        setAssignments(parsed.filter((a: any) => a.is_active !== false));
-        setLoadingAssignments(false);
-        return;
-      }
-      
-      // Try Supabase if no localStorage data
-      const { data, error } = await supabase
-        .from('assignments')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.log('Supabase error:', error);
-        setAssignments([]);
+        
+        // Remove duplicates and filter active assignments
+        const uniqueAssignments = parsed.filter((assignment: any, index: number, self: any[]) => 
+          index === self.findIndex((a: any) => a.title === assignment.title && a.created_at === assignment.created_at)
+        );
+        
+        const activeAssignments = uniqueAssignments.filter((a: any) => a.is_active !== false);
+        console.log('Active assignments (duplicates removed):', activeAssignments);
+        
+        // Update localStorage with cleaned data
+        localStorage.setItem(storageKey, JSON.stringify(activeAssignments));
+        setAssignments(activeAssignments);
+        
+        // Load submissions from localStorage only - filter by current student
+        const submissions = JSON.parse(localStorage.getItem('taskSubmissions') || '[]');
+        const currentStudentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student';
+        
+        // Filter submissions to only show current student's submissions
+        const mySubmissions = submissions.filter((sub: any) => sub.studentName === currentStudentName);
+        console.log('All submissions:', submissions.length);
+        console.log('My submissions:', mySubmissions.length, 'for student:', currentStudentName);
+        
+        const submittedIds = new Set(mySubmissions.map((sub: any) => sub.assignmentId));
+        const statusMap = new Map();
+        mySubmissions.forEach((sub: any) => {
+          statusMap.set(sub.assignmentId, sub.status);
+        });
+        
+        console.log('My submitted assignment IDs:', Array.from(submittedIds));
+        console.log('My status map:', Array.from(statusMap.entries()));
+        
+        setSubmittedAssignments(submittedIds);
+        setSubmissionStatuses(statusMap);
       } else {
-        console.log('Supabase assignments:', data);
-        setAssignments(data || []);
+        console.log('No assignments in localStorage');
+        setAssignments([]);
       }
     } catch (error) {
       console.error('Error loading assignments:', error);
@@ -76,53 +140,35 @@ export default function TasksPage() {
           </div>
         </div>
 
-        {/* DEBUG BUTTONS */}
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => {
-              const stored = localStorage.getItem('assignments');
-              console.log('Manual check - localStorage assignments:', stored);
-              if (stored) {
-                const parsed = JSON.parse(stored);
-                console.log('Parsed:', parsed);
-                setAssignments(parsed);
-              }
-            }}
-            variant="outline"
-            size="sm"
-          >
-            Check localStorage
-          </Button>
-          
-          <Button 
-            onClick={() => {
-              const testAssignment = {
-                id: 'test_123',
-                title: 'Test Assignment',
-                description: 'This is a test',
-                subject: 'mathematics',
-                teacher_id: 'test_teacher',
-                is_active: true,
-                created_at: new Date().toISOString()
-              };
-              
-              const assignments = JSON.parse(localStorage.getItem('assignments') || '[]');
-              assignments.push(testAssignment);
-              localStorage.setItem('assignments', JSON.stringify(assignments));
-              
-              console.log('Test assignment saved');
-              loadAssignments();
-            }}
-            variant="outline"
-            size="sm"
-          >
-            Add Test Assignment
-          </Button>
-        </div>
+
 
         {/* ASSIGNMENTS FROM TEACHERS */}
         <div className="slide-up space-y-3" style={{ animationDelay: "75ms" }}>
-          <p className="text-sm font-medium text-foreground px-1">Teacher Assignments</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-foreground px-1">Teacher Assignments</p>
+            <Button onClick={() => {
+              console.log('=== REFRESH ASSIGNMENTS DEBUG ===');
+              console.log('Raw localStorage assignments:', localStorage.getItem('playnlearn_assignments'));
+              const stored = localStorage.getItem('playnlearn_assignments');
+              if (stored) {
+                const parsed = JSON.parse(stored);
+                console.log('Parsed assignments:', parsed);
+                console.log('Number of assignments:', parsed.length);
+                parsed.forEach((a: any, i: number) => {
+                  console.log(`Assignment ${i}:`, {
+                    id: a.id,
+                    title: a.title,
+                    is_active: a.is_active,
+                    created_at: a.created_at
+                  });
+                });
+              }
+              loadAssignments();
+              toast.success('Assignments refreshed!');
+            }} variant="outline" size="sm">
+              Refresh
+            </Button>
+          </div>
           <div className="space-y-3">
             {loadingAssignments ? (
               <div className="text-center py-8">
@@ -162,14 +208,40 @@ export default function TasksPage() {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Status Display */}
+                    {submittedAssignments.has(assignment.id) && (
+                      <div className="mb-3">
+                        {submissionStatuses.get(assignment.id) === 'approved' && (
+                          <div className="flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded">
+                            <span className="text-sm font-medium">✓ Approved by Teacher</span>
+                          </div>
+                        )}
+                        {submissionStatuses.get(assignment.id) === 'rejected' && (
+                          <div className="flex items-center gap-2 text-red-600 bg-red-50 p-2 rounded">
+                            <span className="text-sm font-medium">✗ Rejected by Teacher - You can resubmit</span>
+                          </div>
+                        )}
+                        {submissionStatuses.get(assignment.id) === 'pending' && (
+                          <div className="flex items-center gap-2 text-yellow-600 bg-yellow-50 p-2 rounded">
+                            <span className="text-sm font-medium">⏳ Pending Review</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <Button 
                       className="w-full" 
                       size="sm"
+                      variant={submittedAssignments.has(assignment.id) && submissionStatuses.get(assignment.id) !== 'rejected' ? "secondary" : "default"}
+                      disabled={submittedAssignments.has(assignment.id) && submissionStatuses.get(assignment.id) !== 'rejected'}
                       onClick={() => {
+                        if (submittedAssignments.has(assignment.id) && submissionStatuses.get(assignment.id) !== 'rejected') return;
+                        
+                        const studentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student';
                         const submission = {
                           id: `submission_${Date.now()}`,
                           assignmentId: assignment.id,
-                          studentName: 'Current Student',
+                          studentName: studentName,
                           submittedAt: new Date().toISOString(),
                           status: 'pending',
                           screenshot: null
@@ -177,19 +249,53 @@ export default function TasksPage() {
                         
                         const input = document.createElement('input');
                         input.type = 'file';
-                        input.accept = 'image/*';
+                        input.accept = 'image/*,application/pdf';
                         input.onchange = (e) => {
                           const file = (e.target as HTMLInputElement).files?.[0];
                           if (file) {
+                            console.log('File selected:', file.name, file.type, file.size);
+                            
+                            // Check file size (max 10MB)
+                            if (file.size > 10 * 1024 * 1024) {
+                              toast.error('File size must be less than 10MB');
+                              return;
+                            }
+                            
                             const reader = new FileReader();
-                            reader.onload = () => {
+                            reader.onload = async () => {
+                              console.log('File read complete, data URL starts with:', (reader.result as string).substring(0, 50));
                               submission.screenshot = reader.result as string;
                               
-                              const submissions = JSON.parse(localStorage.getItem('taskSubmissions') || '[]');
-                              submissions.push(submission);
-                              localStorage.setItem('taskSubmissions', JSON.stringify(submissions));
-                              
-                              toast.success('Screenshot uploaded successfully! Your teacher will review it.');
+                              try {
+                                // Check current localStorage usage
+                                const currentUsage = JSON.stringify(localStorage).length;
+                                const fileSize = (reader.result as string).length;
+                                console.log('Current localStorage usage:', currentUsage, 'bytes');
+                                console.log('File size in base64:', fileSize, 'bytes');
+                                console.log('Total would be:', currentUsage + fileSize, 'bytes');
+                                
+                                // Store all files directly
+                                const submissions = JSON.parse(localStorage.getItem('taskSubmissions') || '[]');
+                                submissions.push(submission);
+                                localStorage.setItem('taskSubmissions', JSON.stringify(submissions));
+                                
+                                setSubmittedAssignments(prev => new Set([...prev, assignment.id]));
+                                setSubmissionStatuses(prev => new Map([...prev, [assignment.id, 'pending']]));
+                                
+                                const fileType = file.type.includes('pdf') ? 'PDF' : 'Screenshot';
+                                toast.success(`${fileType} uploaded successfully! Your teacher will review it.`);
+                              } catch (error) {
+                                console.error('Storage error:', error);
+                                if (error.name === 'QuotaExceededError') {
+                                  toast.error('Storage full. Please clear browser data or use "Clear Submissions" button in teacher panel.');
+                                } else {
+                                  toast.error('Error saving submission. Please try again.');
+                                }
+                              }
+                            };
+                            reader.onerror = () => {
+                              console.error('Error reading file:', reader.error);
+                              toast.error('Error reading file');
                             };
                             reader.readAsDataURL(file);
                           }
@@ -197,7 +303,14 @@ export default function TasksPage() {
                         input.click();
                       }}
                     >
-                      Upload Screenshot
+                      {submittedAssignments.has(assignment.id) 
+                        ? submissionStatuses.get(assignment.id) === 'approved' 
+                          ? '✓ Approved' 
+                          : submissionStatuses.get(assignment.id) === 'rejected'
+                            ? 'Resubmit File'
+                            : '✓ Submitted'
+                        : 'Upload File (Image/PDF)'
+                      }
                     </Button>
                   </div>
                 </Card>
