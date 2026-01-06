@@ -26,7 +26,6 @@ import {
   Zap,
   Users,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Student {
@@ -64,47 +63,66 @@ export default function TeacherStudentProgressPage() {
 
   const loadStudentData = async () => {
     try {
-      // Get teacher's classes
-      const { data: classes, error: classError } = await supabase
-        .from('classes')
-        .select('id, name, grade')
-        .eq('teacher_id', user?.id)
-        .eq('is_active', true);
-
-      if (classError) throw classError;
-
-      // Get students from localStorage for each class
-      const savedStudents = JSON.parse(localStorage.getItem('classStudents') || '{}');
+      // Get teacher's classes from localStorage
+      const teacherId = user?.id || 'teacher_001';
+      const teacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const myClasses = teacherClasses.filter((cls) => cls.teacherId === teacherId);
+      
+      // Get class enrollments
+      const classEnrollments = JSON.parse(localStorage.getItem('classEnrollments') || '{}');
+      
+      // Define subjects (same as in assignment creation)
+      const subjects = [
+        { value: "mathematics", label: "Mathematics", color: "bg-primary" },
+        { value: "physics", label: "Physics", color: "bg-secondary" },
+        { value: "chemistry", label: "Chemistry", color: "bg-accent" },
+        { value: "biology", label: "Biology", color: "bg-badge" },
+        { value: "technology", label: "Technology", color: "bg-primary" },
+        { value: "finance", label: "Finance", color: "bg-secondary" },
+        { value: "entrepreneurship", label: "Entrepreneurship", color: "bg-accent" },
+        { value: "village-skills", label: "Village Skills", color: "bg-badge" }
+      ];
+      
       const allStudents: Student[] = [];
+      const uniqueStudents = new Map();
 
-      classes?.forEach(cls => {
-        const classStudents = savedStudents[cls.id] || [];
-        classStudents.forEach((student: any) => {
-          const progress = student.progress || 0;
-          allStudents.push({
-            id: student.id,
-            name: student.name,
-            avatar: student.avatar,
-            class: cls.name,
-            learningStreak: Math.floor(progress / 10), // Derive streak from progress
-            lastActive: student.lastActive || 'Recently',
-            subjects: [
-              { name: "Mathematics", progress: progress, color: "bg-primary" },
-              { name: "Science", progress: Math.max(0, progress - 10), color: "bg-secondary" },
-              { name: "English", progress: Math.max(0, progress - 5), color: "bg-accent" },
-              { name: "Social Studies", progress: Math.max(0, progress - 15), color: "bg-badge" },
-            ],
-            strengthAreas: progress > 70 ? ["Strong performance", "Consistent effort"] : ["Developing skills"],
-            supportNeeded: progress < 50 ? ["Additional practice", "Concept reinforcement"] : [],
-            completedTasks: Math.floor(progress / 5),
-            earnedCoins: student.coins || 0,
-          });
+      myClasses.forEach(cls => {
+        const enrolledStudents = classEnrollments[cls.id] || [];
+        
+        enrolledStudents.forEach((student: any) => {
+          const studentKey = `${student.studentName}-${student.studentEmail}`;
+          
+          // Only add unique students
+          if (!uniqueStudents.has(studentKey)) {
+            const progress = student.progress || 0;
+            const studentData: Student = {
+              id: student.studentId || `student_${Date.now()}_${Math.random()}`,
+              name: student.studentName,
+              avatar: student.studentName.charAt(0).toUpperCase(),
+              class: cls.name,
+              learningStreak: Math.floor(progress / 10),
+              lastActive: new Date(student.joinedAt).toLocaleDateString() === new Date().toLocaleDateString() ? 'Today' : new Date(student.joinedAt).toLocaleDateString(),
+              subjects: subjects.map((subject, index) => ({
+                name: subject.label,
+                progress: Math.max(0, progress - (index * 5)), // Vary progress slightly per subject
+                color: subject.color,
+              })),
+              strengthAreas: progress > 70 ? ["Strong performance", "Consistent effort"] : progress > 40 ? ["Developing skills"] : [],
+              supportNeeded: progress < 50 ? ["Additional practice", "Concept reinforcement"] : [],
+              completedTasks: Math.floor(progress / 5),
+              earnedCoins: Math.floor(progress * 2),
+            };
+            
+            uniqueStudents.set(studentKey, studentData);
+            allStudents.push(studentData);
+          }
         });
       });
 
       setStudents(allStudents);
     } catch (error) {
       console.error('Error loading student data:', error);
+      setStudents([]);
     } finally {
       setLoading(false);
     }

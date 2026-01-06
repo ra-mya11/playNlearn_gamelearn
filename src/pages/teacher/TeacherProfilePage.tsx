@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AppLayout } from "@/components/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Edit, Save, X, User, Mail, Phone, MapPin, Calendar, BookOpen, Award, Users, Clock } from "lucide-react";
 
@@ -62,7 +63,48 @@ const TeacherProfilePage = () => {
       setProfile(parsed);
       setEditedProfile(parsed);
     }
-  }, []);
+    
+    // Calculate actual stats
+    calculateActualStats();
+  }, [user?.id]);
+
+  const calculateActualStats = () => {
+    try {
+      const teacherId = user?.id || 'teacher_001';
+      
+      // Get teacher's classes
+      const teacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const myClasses = teacherClasses.filter((cls) => cls.teacherId === teacherId);
+      
+      // Get class enrollments
+      const classEnrollments = JSON.parse(localStorage.getItem('classEnrollments') || '{}');
+      
+      // Count unique students
+      const uniqueStudents = new Set();
+      myClasses.forEach(cls => {
+        const enrolledStudents = classEnrollments[cls.id] || [];
+        enrolledStudents.forEach(student => {
+          const studentKey = `${student.studentName}-${student.studentEmail}`;
+          uniqueStudents.add(studentKey);
+        });
+      });
+      
+      // Update profile with actual counts
+      setProfile(prev => ({
+        ...prev,
+        totalStudents: uniqueStudents.size,
+        totalClasses: myClasses.length
+      }));
+      
+      setEditedProfile(prev => ({
+        ...prev,
+        totalStudents: uniqueStudents.size,
+        totalClasses: myClasses.length
+      }));
+    } catch (error) {
+      console.error('Error calculating stats:', error);
+    }
+  };
 
   const handleSave = () => {
     setProfile(editedProfile);
@@ -103,37 +145,38 @@ const TeacherProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/teacher/dashboard")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
-              <Edit className="h-4 w-4" />
-              Edit Profile
+    <AppLayout role="teacher" title="Teacher Profile">
+      <div className="px-4 py-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/teacher/dashboard")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
             </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button onClick={handleSave} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Save
+            
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
+                <Edit className="h-4 w-4" />
+                Edit Profile
               </Button>
-              <Button variant="outline" onClick={handleCancel} className="flex items-center gap-2">
-                <X className="h-4 w-4" />
-                Cancel
-              </Button>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={handleSave} className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+                <Button variant="outline" onClick={handleCancel} className="flex items-center gap-2">
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Overview */}
@@ -377,8 +420,9 @@ const TeacherProfilePage = () => {
             </Card>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

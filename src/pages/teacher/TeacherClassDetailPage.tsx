@@ -28,24 +28,23 @@ export default function TeacherClassDetailPage() {
 
   const loadClassData = async () => {
     try {
-      const { data: classData, error } = await supabase
-        .from('classes')
-        .select('*')
-        .eq('id', id)
-        .eq('teacher_id', user?.id)
-        .single();
-
-      if (error) {
-        console.error('Class not found:', error);
+      // Load class from localStorage
+      const teacherId = user?.id || 'teacher_001';
+      const storedClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const classData = storedClasses.find(cls => cls.id === id && cls.teacherId === teacherId);
+      
+      if (!classData) {
+        console.error('Class not found');
         setCurrentClass(null);
       } else {
         setCurrentClass(classData);
       }
 
-      // Load students from localStorage for now
-      const savedStudents = JSON.parse(localStorage.getItem('classStudents') || '{}');
-      const classStudents = savedStudents[id] || [];
-      setStudents(classStudents);
+      // Load enrolled students from classEnrollments
+      const classEnrollments = JSON.parse(localStorage.getItem('classEnrollments') || '{}');
+      const enrolledStudents = classEnrollments[id] || [];
+      console.log('Enrolled students for class:', id, enrolledStudents);
+      setStudents(enrolledStudents);
     } catch (error) {
       console.error('Error loading class data:', error);
     } finally {
@@ -122,70 +121,25 @@ export default function TeacherClassDetailPage() {
       <div className="px-4 py-6">
         <div className="mb-4">
           <h2 className="font-heading text-2xl font-bold">{currentClass.name}</h2>
-          <p className="text-muted-foreground">Grade {currentClass.grade} • {currentClass.academic_year}</p>
-        </div>
-
-        <div className="mb-6">
-          <Dialog open={showAddStudent} onOpenChange={setShowAddStudent}>
-            <DialogTrigger asChild>
-              <Button className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Student to {currentClass.name}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="studentName">Student Name *</Label>
-                  <Input
-                    id="studentName"
-                    value={newStudent.name}
-                    onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
-                    placeholder="Enter student name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="studentEmail">Email (Optional)</Label>
-                  <Input
-                    id="studentEmail"
-                    type="email"
-                    value={newStudent.email}
-                    onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
-                    placeholder="Enter student email"
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <Button onClick={addStudent} className="flex-1">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Student
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowAddStudent(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <p className="text-muted-foreground">Class Code: {currentClass.code} • Created: {new Date(currentClass.created_at).toLocaleDateString()}</p>
         </div>
 
         <div className="space-y-3">
-          <h3 className="font-semibold">Students ({students.length})</h3>
+          <h3 className="font-semibold">Enrolled Students ({students.length})</h3>
+          <p className="text-sm text-muted-foreground">Students join this class using the class code: <span className="font-mono font-bold text-primary">{currentClass.code}</span></p>
           {students.length > 0 ? (
             students.map((student) => (
-              <div key={student.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+              <div key={student.studentId} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-heading font-bold text-primary text-sm">
-                  {student.avatar}
+                  {student.studentName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">{student.name}</p>
-                  <p className="text-sm text-muted-foreground">{student.email || 'No email provided'}</p>
+                  <p className="font-medium">{student.studentName}</p>
+                  <p className="text-sm text-muted-foreground">{student.studentEmail}</p>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                     <span>{student.progress || 0}% progress</span>
                     <span>•</span>
-                    <span>{student.coins || 0} coins</span>
+                    <span>Joined: {new Date(student.joinedAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
@@ -194,7 +148,7 @@ export default function TeacherClassDetailPage() {
             <div className="text-center py-8">
               <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="font-semibold text-lg mb-2">No Students Yet</h3>
-              <p className="text-muted-foreground">Click "Add Student" above to enroll students in this class.</p>
+              <p className="text-muted-foreground">Students will appear here when they join using the class code: <span className="font-mono font-bold text-primary">{currentClass.code}</span></p>
             </div>
           )}
         </div>

@@ -108,61 +108,64 @@ export default function TeacherDashboard() {
 
   const calculateTeacherStats = async () => {
     try {
-      // Get teacher's classes from Supabase
-      const { data: classes, error: classError } = await supabase
-        .from('classes')
-        .select('id, name')
-        .eq('teacher_id', user?.id)
-        .eq('is_active', true);
-
-      if (classError) throw classError;
-
-      // Get students from localStorage for each class
-      const savedStudents = JSON.parse(localStorage.getItem('classStudents') || '{}');
-      const savedAssignments = JSON.parse(localStorage.getItem('allAssignments') || '[]');
+      // Get teacher's classes from localStorage
+      const teacherId = user?.id || 'teacher_001';
+      const teacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const myClasses = teacherClasses.filter((cls) => cls.teacherId === teacherId);
       
-      let totalStudents = 0;
-      let activeStudents = 0;
-      let totalProgress = 0;
+      // Get class enrollments
+      const classEnrollments = JSON.parse(localStorage.getItem('classEnrollments') || '{}');
+      
+      // Get submissions
+      const allSubmissions = JSON.parse(localStorage.getItem('taskSubmissions') || '[]');
+      
+      let uniqueStudents = new Set();
       let studentActivities = [];
+      let pendingSubmissions = 0;
       
       // Calculate from actual classes and students
-      classes?.forEach(cls => {
-        const classStudents = savedStudents[cls.id] || [];
-        totalStudents += classStudents.length;
+      myClasses.forEach(cls => {
+        const enrolledStudents = classEnrollments[cls.id] || [];
         
-        classStudents.forEach(student => {
-          const progress = student.progress || 0;
-          totalProgress += progress;
+        enrolledStudents.forEach(student => {
+          const studentKey = `${student.studentName}-${student.studentEmail}`;
+          uniqueStudents.add(studentKey);
           
-          // Consider students with >0 progress as active
-          if (progress > 0) {
-            activeStudents++;
-            
-            // Generate recent activity for active students
-            studentActivities.push({
-              student: student.name,
-              action: `has ${progress}% progress in ${cls.name}`,
-              time: student.lastActive || 'Recently',
-              icon: progress > 50 ? Award : TrendingUp,
-            });
-          }
+          const progress = student.progress || 0;
+          
+          // Generate recent activity for enrolled students
+          studentActivities.push({
+            student: student.studentName,
+            action: `has ${progress}% progress in ${cls.name}`,
+            time: new Date(student.joinedAt).toLocaleDateString() === new Date().toLocaleDateString() ? 'Just joined' : new Date(student.joinedAt).toLocaleDateString(),
+            icon: progress > 50 ? Award : TrendingUp,
+          });
         });
       });
       
-      // Calculate pending tasks based on assignments and students
-      const teacherAssignments = savedAssignments.filter(assignment => 
-        assignment.createdBy === user?.id || assignment.teacher_id === user?.id
-      );
-      const pendingTasks = teacherAssignments.length * totalStudents;
+      const totalStudents = uniqueStudents.size;
+      const activeStudents = totalStudents;
       
-      // Calculate village impact based on average progress
-      const villageImpact = totalStudents > 0 ? Math.round(totalProgress / totalStudents) : 0;
+      // Count pending submissions from teacher's assignments
+      let allTeacherAssignments = [];
+      myClasses.forEach((cls) => {
+        const classAssignments = JSON.parse(localStorage.getItem(`class_assignments_${cls.id}`) || '[]');
+        allTeacherAssignments = [...allTeacherAssignments, ...classAssignments];
+      });
+      
+      const teacherSubmissions = allSubmissions.filter(sub => 
+        allTeacherAssignments.some(assignment => assignment.id === sub.assignmentId)
+      );
+      
+      pendingSubmissions = teacherSubmissions.filter(sub => sub.status === 'pending').length;
+      
+      // Calculate village impact based on total enrolled students
+      const villageImpact = totalStudents > 0 ? Math.min(totalStudents * 10, 100) : 0;
       
       setStats({
         studentsActive: activeStudents,
-        pendingTasks: Math.min(pendingTasks, 100),
-        pendingRewards: Math.round(activeStudents * 0.4),
+        pendingTasks: pendingSubmissions,
+        pendingRewards: Math.round(activeStudents * 0.3),
         villageImpact: villageImpact,
       });
       
@@ -170,7 +173,6 @@ export default function TeacherDashboard() {
       setRecentActivity(studentActivities.slice(0, 3));
     } catch (error) {
       console.error('Error calculating teacher stats:', error);
-      // Set empty stats if calculation fails
       setStats({
         studentsActive: 0,
         pendingTasks: 0,
@@ -221,7 +223,7 @@ export default function TeacherDashboard() {
             <div className="relative z-10 space-y-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">
-                  {t("teacher.todayOverview", { defaultValue: "Today's Overview" })}
+                  {t("teacher.todayOverview", { defaultValue: "Overall Statistics" })}
                 </p>
                 <p className="text-xs text-muted-foreground italic">
                   {t(
@@ -243,7 +245,7 @@ export default function TeacherDashboard() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {t("teacher.studentsActive", { defaultValue: "Students Active Today" })}
+                    {t("teacher.studentsActive", { defaultValue: "Total Students Enrolled" })}
                   </p>
                 </div>
 

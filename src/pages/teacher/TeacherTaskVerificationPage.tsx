@@ -60,25 +60,28 @@ export default function TeacherTaskVerificationPage() {
 
   const loadAssignments = () => {
     try {
-      const storageKey = 'playnlearn_assignments';
-      const storedAssignments = localStorage.getItem(storageKey);
-      if (storedAssignments) {
-        const parsed = JSON.parse(storedAssignments);
-        
-        // Remove duplicates based on title and created_at
-        const uniqueAssignments = parsed.filter((assignment: any, index: number, self: any[]) => 
-          index === self.findIndex((a: any) => a.title === assignment.title && a.created_at === assignment.created_at)
-        );
-        
-        const activeAssignments = uniqueAssignments.filter((a: any) => a.is_active !== false);
-        console.log('Teacher assignments loaded (duplicates removed):', activeAssignments);
-        
-        // Save cleaned assignments back to localStorage
-        localStorage.setItem(storageKey, JSON.stringify(activeAssignments));
-        setAssignments(activeAssignments);
-      } else {
-        setAssignments([]);
-      }
+      // Load assignments from teacher's classes only
+      const teacherId = user?.id || 'teacher_001';
+      const teacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const myClasses = teacherClasses.filter((cls) => cls.teacherId === teacherId);
+      
+      console.log('Loading assignments for teacher classes:', myClasses);
+      
+      let allAssignments = [];
+      myClasses.forEach((cls) => {
+        const classAssignments = JSON.parse(localStorage.getItem(`class_assignments_${cls.id}`) || '[]');
+        console.log(`Assignments for class ${cls.name}:`, classAssignments);
+        // Add class info to assignments
+        const assignmentsWithClassInfo = classAssignments.map(assignment => ({
+          ...assignment,
+          className: cls.name,
+          classCode: cls.code
+        }));
+        allAssignments = [...allAssignments, ...assignmentsWithClassInfo];
+      });
+      
+      console.log('All teacher assignments loaded:', allAssignments);
+      setAssignments(allAssignments);
     } catch (error) {
       console.error('Error loading assignments:', error);
       setAssignments([]);
@@ -88,67 +91,45 @@ export default function TeacherTaskVerificationPage() {
   const loadSubmissions = async () => {
     console.log('Raw taskSubmissions localStorage:', localStorage.getItem('taskSubmissions'));
     const savedSubmissions = JSON.parse(localStorage.getItem('taskSubmissions') || '[]');
-    const savedAssignments = JSON.parse(localStorage.getItem('playnlearn_assignments') || '[]');
     
-    console.log('Saved submissions:', savedSubmissions);
-    console.log('Saved assignments:', savedAssignments);
+    // Get teacher's classes to filter relevant submissions
+    const teacherId = user?.id || 'teacher_001';
+    const teacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+    const myClasses = teacherClasses.filter((cls) => cls.teacherId === teacherId);
+    const myClassIds = myClasses.map(cls => cls.id);
     
-    // Load full submissions from IndexedDB
-    const dbName = 'taskSubmissions';
-    const request = indexedDB.open(dbName, 1);
+    console.log('Teacher classes:', myClasses);
+    console.log('My class IDs:', myClassIds);
     
-    request.onsuccess = (e) => {
-      const db = (e.target as IDBOpenDBRequest).result;
-      if (db.objectStoreNames.contains('submissions')) {
-        const transaction = db.transaction(['submissions'], 'readonly');
-        const store = transaction.objectStore('submissions');
-        const getAllRequest = store.getAll();
-        
-        getAllRequest.onsuccess = () => {
-          const indexedDBSubmissions = getAllRequest.result;
-          // Merge localStorage and IndexedDB submissions
-          const allSubmissions = [...savedSubmissions, ...indexedDBSubmissions];
-          
-          // Add assignment titles
-          const submissionsWithTitles = allSubmissions.map((sub: TaskSubmission) => {
-            const assignment = savedAssignments.find((a: any) => a.id === sub.assignmentId);
-            return {
-              ...sub,
-              assignmentTitle: assignment?.title || 'Unknown Assignment'
-            };
-          });
-          
-          console.log('All submissions with titles:', submissionsWithTitles);
-          setSubmissions(submissionsWithTitles);
-        };
-      } else {
-        // Fallback to localStorage only
-        const submissionsWithTitles = savedSubmissions.map((sub: TaskSubmission) => {
-          const assignment = savedAssignments.find((a: any) => a.id === sub.assignmentId);
-          return {
-            ...sub,
-            assignmentTitle: assignment?.title || 'Unknown Assignment'
-          };
-        });
-        
-        console.log('Submissions with titles (localStorage only):', submissionsWithTitles);
-        setSubmissions(submissionsWithTitles);
-      }
-    };
+    // Load assignments from teacher's classes to get assignment titles
+    let allAssignments = [];
+    myClasses.forEach((cls) => {
+      const classAssignments = JSON.parse(localStorage.getItem(`class_assignments_${cls.id}`) || '[]');
+      allAssignments = [...allAssignments, ...classAssignments.map(a => ({...a, className: cls.name, classCode: cls.code}))]
+    });
     
-    request.onerror = () => {
-      // Fallback to localStorage only
-      const submissionsWithTitles = savedSubmissions.map((sub: TaskSubmission) => {
-        const assignment = savedAssignments.find((a: any) => a.id === sub.assignmentId);
-        return {
-          ...sub,
-          assignmentTitle: assignment?.title || 'Unknown Assignment'
-        };
-      });
-      
-      console.log('Submissions with titles (fallback):', submissionsWithTitles);
-      setSubmissions(submissionsWithTitles);
-    };
+    console.log('All teacher assignments:', allAssignments);
+    
+    // Filter submissions for teacher's assignments only
+    const teacherSubmissions = savedSubmissions.filter(sub => 
+      allAssignments.some(assignment => assignment.id === sub.assignmentId)
+    );
+    
+    console.log('Filtered teacher submissions:', teacherSubmissions);
+    
+    // Add assignment titles and class info
+    const submissionsWithTitles = teacherSubmissions.map((sub) => {
+      const assignment = allAssignments.find((a) => a.id === sub.assignmentId);
+      return {
+        ...sub,
+        assignmentTitle: assignment?.title || 'Unknown Assignment',
+        className: assignment?.className || 'Unknown Class',
+        classCode: assignment?.classCode || 'N/A'
+      };
+    });
+    
+    console.log('Submissions with titles and class info:', submissionsWithTitles);
+    setSubmissions(submissionsWithTitles);
   };
 
   const handleApprove = async (submissionId: string) => {
@@ -387,6 +368,9 @@ export default function TeacherTaskVerificationPage() {
                       <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                         {assignment.subject}
                       </span>
+                      <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                        {assignment.className} ({assignment.classCode})
+                      </span>
                       {assignment.due_date && (
                         <span className="text-xs text-muted-foreground">
                           Due: {new Date(assignment.due_date).toLocaleDateString()}
@@ -453,6 +437,9 @@ export default function TeacherTaskVerificationPage() {
                 <div className="mb-3">
                   <p className="font-medium">{submission.assignmentTitle}</p>
                   <p className="text-sm text-muted-foreground">File submission (Image or PDF)</p>
+                  <p className="text-xs text-primary bg-primary/10 px-2 py-1 rounded inline-block mt-1">
+                    {submission.className} ({submission.classCode})
+                  </p>
                 </div>
 
                 {/* File Preview */}

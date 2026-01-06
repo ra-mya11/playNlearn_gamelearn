@@ -87,6 +87,7 @@ const TeacherAnalyticsPage = lazy(() => import("./pages/teacher/TeacherAnalytics
 const TeacherTaskVerificationPage = lazy(() => import("./pages/teacher/TeacherTaskVerificationPage"));
 const TeacherStudentProgressPage = lazy(() => import("./pages/teacher/TeacherStudentProgressPage"));
 const TeacherCreateAssignmentPage = lazy(() => import("./pages/teacher/TeacherCreateAssignmentPage"));
+const TeacherClassManagementPage = lazy(() => import("./pages/teacher/TeacherClassManagementPage"));
 const TeacherCreateClassPage = lazy(() => import("./pages/teacher/TeacherCreateClassPage"));
 const TeacherProfilePage = lazy(() => import("./pages/teacher/TeacherProfilePage"));
 const ParentDashboard = lazy(() => import("./pages/parent/ParentDashboard"));
@@ -485,6 +486,11 @@ const App = () => (
                 <Route path="/teacher/village-impact" element={
                   <ProtectedRoute allowedRoles={["teacher"]}>
                     <TeacherAnalyticsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/teacher/class-management" element={
+                  <ProtectedRoute allowedRoles={["teacher"]}>
+                    <TeacherClassManagementPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/teacher/classes/new" element={

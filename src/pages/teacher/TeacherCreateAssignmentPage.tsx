@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/navigation";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, BookOpen, Clock, Coins, Star } from "lucide-react";
+import { Plus, BookOpen, Clock, Coins, Star, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,12 +20,30 @@ export default function TeacherCreateAssignmentPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [classes, setClasses] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     subject: "",
-    dueDate: ""
+    dueDate: "",
+    classId: ""
   });
+
+  useEffect(() => {
+    loadTeacherClasses();
+  }, []);
+
+  const loadTeacherClasses = () => {
+    try {
+      const teacherId = user?.id || 'teacher_001';
+      const storedClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const myClasses = storedClasses.filter((cls: any) => cls.teacherId === teacherId);
+      setClasses(myClasses);
+    } catch (error) {
+      console.error('Error loading classes:', error);
+      setClasses([]);
+    }
+  };
 
   const subjects = [
     { value: "mathematics", label: "Mathematics" },
@@ -41,8 +59,8 @@ export default function TeacherCreateAssignmentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.subject) {
-      toast.error("Please fill in all required fields");
+    if (!formData.title || !formData.description || !formData.subject || !formData.classId) {
+      toast.error("Please fill in all required fields including class selection");
       return;
     }
 
@@ -57,48 +75,34 @@ export default function TeacherCreateAssignmentPage() {
       console.log('=== TEACHER ASSIGNMENT CREATION DEBUG ===');
       console.log('Form data:', formData);
       
-      // Create assignment object
+      // Create assignment object with class ID
       const assignment = {
         id: `assignment_${Date.now()}`,
         title: formData.title,
         description: formData.description,
         subject: formData.subject,
         due_date: formData.dueDate || null,
-        teacher_id: 'teacher_001',
+        teacher_id: user?.id || 'teacher_001',
+        class_id: formData.classId,
         is_active: true,
         created_at: new Date().toISOString()
       };
       
       console.log('New assignment to save:', assignment);
       
-      // Save to localStorage with a unique key to avoid conflicts
-      const storageKey = 'playnlearn_assignments';
+      // Save to localStorage with class-specific key
+      const storageKey = `class_assignments_${formData.classId}`;
       const assignments = JSON.parse(localStorage.getItem(storageKey) || '[]');
       assignments.push(assignment);
       localStorage.setItem(storageKey, JSON.stringify(assignments));
       
       console.log('Assignment saved to localStorage:', assignment);
-      console.log('All assignments in localStorage:', assignments);
-      
-      // Force trigger storage event for cross-tab communication
-      console.log('Triggering storage event...');
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: storageKey,
-        newValue: JSON.stringify(assignments),
-        storageArea: localStorage
-      }));
-      
-      // Also try custom event as backup
-      window.dispatchEvent(new CustomEvent('assignmentCreated', { detail: assignment }));
-      console.log('Events dispatched');
+      console.log('All assignments for class:', assignments);
       
       toast.success("Assignment created successfully!");
       navigate("/teacher/classes");
     } catch (error) {
       console.error('Error creating assignment:', error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-      }
       toast.error(`Failed to create assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
@@ -129,6 +133,28 @@ export default function TeacherCreateAssignmentPage() {
               </h3>
               
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="classId">Select Class *</Label>
+                  <Select value={formData.classId} onValueChange={(value) => setFormData({...formData, classId: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((cls: any) => (
+                        <SelectItem key={cls.id} value={cls.id}>
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            {cls.name} ({cls.code})
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {classes.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No classes found. Create a class first.</p>
+                  )}
+                </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="title">Assignment Title *</Label>
                   <Input

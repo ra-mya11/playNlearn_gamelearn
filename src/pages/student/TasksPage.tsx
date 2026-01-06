@@ -3,12 +3,16 @@ import { useTranslation } from "react-i18next";
 import { AppLayout } from "@/components/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AnimatedProgress } from "@/components/ui/animated-progress";
 import {
   BookOpen,
   Clock,
   Coins,
   TrendingUp,
+  UserPlus,
+  Users,
+  X,
 } from "lucide-react";
 import { usePlayCoins } from "@/hooks/use-playcoins";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +28,131 @@ export default function TasksPage() {
   const [submittedAssignments, setSubmittedAssignments] = useState(new Set());
   const [submissionStatuses, setSubmissionStatuses] = useState(new Map());
 
+  const [joinedClasses, setJoinedClasses] = useState([]);
+  const [classCode, setClassCode] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+
+  const joinClass = async () => {
+    if (!classCode.trim()) {
+      toast.error('Please enter a class code');
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      const allTeacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const targetClass = allTeacherClasses.find((cls) => cls.code.toUpperCase() === classCode.toUpperCase());
+
+      if (!targetClass) {
+        toast.error('Invalid class code. Please check and try again.');
+        setIsJoining(false);
+        return;
+      }
+
+      const alreadyJoined = joinedClasses.some(cls => cls.code === targetClass.code);
+      if (alreadyJoined) {
+        toast.error('You have already joined this class');
+        setIsJoining(false);
+        return;
+      }
+
+      const studentId = user?.id || 'student_001';
+      const studentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student';
+      const studentEmail = user?.email || 'student@example.com';
+      
+      const joinedClass = {
+        id: targetClass.id,
+        name: targetClass.name,
+        code: targetClass.code,
+        teacherId: targetClass.teacherId,
+        joinedAt: new Date().toISOString()
+      };
+
+      const updatedClasses = [...joinedClasses, joinedClass];
+      localStorage.setItem(`studentClasses_${studentId}`, JSON.stringify(updatedClasses));
+
+      // Add student to class enrollment list
+      const classEnrollments = JSON.parse(localStorage.getItem('classEnrollments') || '{}');
+      console.log('Before adding student - classEnrollments:', classEnrollments);
+      
+      if (!classEnrollments[targetClass.id]) {
+        classEnrollments[targetClass.id] = [];
+      }
+      
+      const studentData = {
+        studentId: studentId,
+        studentName: studentName,
+        studentEmail: studentEmail,
+        joinedAt: new Date().toISOString(),
+        progress: 0
+      };
+      
+      classEnrollments[targetClass.id].push(studentData);
+      console.log('After adding student - classEnrollments:', classEnrollments);
+      console.log('Student data added:', studentData);
+      
+      localStorage.setItem('classEnrollments', JSON.stringify(classEnrollments));
+      console.log('Saved to localStorage - classEnrollments key');
+
+      targetClass.studentCount = (targetClass.studentCount || 0) + 1;
+      localStorage.setItem('teacherClasses', JSON.stringify(allTeacherClasses));
+
+      setJoinedClasses(updatedClasses);
+      setClassCode("");
+      toast.success(`Successfully joined "${targetClass.name}"!`);
+      loadAssignments();
+    } catch (error) {
+      console.error('Error joining class:', error);
+      toast.error('Failed to join class');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const leaveClass = async (classId, className) => {
+    try {
+      const studentId = user?.id || 'student_001';
+      
+      const updatedClasses = joinedClasses.filter(cls => cls.id !== classId);
+      localStorage.setItem(`studentClasses_${studentId}`, JSON.stringify(updatedClasses));
+      
+      const classEnrollments = JSON.parse(localStorage.getItem('classEnrollments') || '{}');
+      if (classEnrollments[classId]) {
+        classEnrollments[classId] = classEnrollments[classId].filter(
+          student => student.studentId !== studentId
+        );
+        localStorage.setItem('classEnrollments', JSON.stringify(classEnrollments));
+      }
+      
+      const allTeacherClasses = JSON.parse(localStorage.getItem('teacherClasses') || '[]');
+      const targetClass = allTeacherClasses.find(cls => cls.id === classId);
+      if (targetClass) {
+        targetClass.studentCount = Math.max(0, (targetClass.studentCount || 1) - 1);
+        localStorage.setItem('teacherClasses', JSON.stringify(allTeacherClasses));
+      }
+      
+      setJoinedClasses(updatedClasses);
+      toast.success(`Left "${className}" successfully`);
+      loadAssignments();
+    } catch (error) {
+      console.error('Error leaving class:', error);
+      toast.error('Failed to leave class');
+    }
+  };
+
+  const loadJoinedClasses = () => {
+    try {
+      const studentId = user?.id || 'student_001';
+      const storedClasses = JSON.parse(localStorage.getItem(`studentClasses_${studentId}`) || '[]');
+      setJoinedClasses(storedClasses);
+    } catch (error) {
+      console.error('Error loading joined classes:', error);
+      setJoinedClasses([]);
+    }
+  };
+
   useEffect(() => {
+    loadJoinedClasses();
     loadAssignments();
 
     // Listen for storage changes (cross-tab communication)
@@ -71,52 +199,57 @@ export default function TasksPage() {
 
   const loadAssignments = async () => {
     try {
-      console.log('Loading assignments from localStorage...');
+      console.log('Loading assignments from joined classes...');
       
-      const storageKey = 'playnlearn_assignments';
-      const storedAssignments = localStorage.getItem(storageKey);
-      console.log('Raw localStorage assignments:', storedAssignments);
+      // Get student's joined classes
+      const studentId = user?.id || 'student_001';
+      const joinedClasses = JSON.parse(localStorage.getItem(`studentClasses_${studentId}`) || '[]');
+      console.log('Student joined classes:', joinedClasses);
       
-      if (storedAssignments) {
-        const parsed = JSON.parse(storedAssignments);
-        console.log('Parsed assignments:', parsed);
-        
-        // Remove duplicates and filter active assignments
-        const uniqueAssignments = parsed.filter((assignment: any, index: number, self: any[]) => 
-          index === self.findIndex((a: any) => a.title === assignment.title && a.created_at === assignment.created_at)
-        );
-        
-        const activeAssignments = uniqueAssignments.filter((a: any) => a.is_active !== false);
-        console.log('Active assignments (duplicates removed):', activeAssignments);
-        
-        // Update localStorage with cleaned data
-        localStorage.setItem(storageKey, JSON.stringify(activeAssignments));
-        setAssignments(activeAssignments);
-        
-        // Load submissions from localStorage only - filter by current student
-        const submissions = JSON.parse(localStorage.getItem('taskSubmissions') || '[]');
-        const currentStudentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student';
-        
-        // Filter submissions to only show current student's submissions
-        const mySubmissions = submissions.filter((sub: any) => sub.studentName === currentStudentName);
-        console.log('All submissions:', submissions.length);
-        console.log('My submissions:', mySubmissions.length, 'for student:', currentStudentName);
-        
-        const submittedIds = new Set(mySubmissions.map((sub: any) => sub.assignmentId));
-        const statusMap = new Map();
-        mySubmissions.forEach((sub: any) => {
-          statusMap.set(sub.assignmentId, sub.status);
-        });
-        
-        console.log('My submitted assignment IDs:', Array.from(submittedIds));
-        console.log('My status map:', Array.from(statusMap.entries()));
-        
-        setSubmittedAssignments(submittedIds);
-        setSubmissionStatuses(statusMap);
-      } else {
-        console.log('No assignments in localStorage');
+      if (joinedClasses.length === 0) {
+        console.log('No classes joined');
         setAssignments([]);
+        setLoadingAssignments(false);
+        return;
       }
+      
+      // Load assignments from all joined classes
+      let allAssignments: any[] = [];
+      joinedClasses.forEach((cls: any) => {
+        const classAssignments = JSON.parse(localStorage.getItem(`class_assignments_${cls.id}`) || '[]');
+        console.log(`Assignments for class ${cls.name}:`, classAssignments);
+        // Add class info to each assignment
+        const assignmentsWithClassInfo = classAssignments.map((assignment: any) => ({
+          ...assignment,
+          className: cls.name,
+          classCode: cls.code
+        }));
+        allAssignments = [...allAssignments, ...assignmentsWithClassInfo];
+      });
+      
+      console.log('All assignments from joined classes:', allAssignments);
+      setAssignments(allAssignments);
+      
+      // Load submissions from localStorage only - filter by current student
+      const submissions = JSON.parse(localStorage.getItem('taskSubmissions') || '[]');
+      const currentStudentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student';
+      
+      // Filter submissions to only show current student's submissions
+      const mySubmissions = submissions.filter((sub: any) => sub.studentName === currentStudentName);
+      console.log('All submissions:', submissions.length);
+      console.log('My submissions:', mySubmissions.length, 'for student:', currentStudentName);
+      
+      const submittedIds = new Set(mySubmissions.map((sub: any) => sub.assignmentId));
+      const statusMap = new Map();
+      mySubmissions.forEach((sub: any) => {
+        statusMap.set(sub.assignmentId, sub.status);
+      });
+      
+      console.log('My submitted assignment IDs:', Array.from(submittedIds));
+      console.log('My status map:', Array.from(statusMap.entries()));
+      
+      setSubmittedAssignments(submittedIds);
+      setSubmissionStatuses(statusMap);
     } catch (error) {
       console.error('Error loading assignments:', error);
       setAssignments([]);
@@ -128,6 +261,48 @@ export default function TasksPage() {
   return (
     <AppLayout role="student" playCoins={wallet?.balance || 0} title="Tasks">
       <div className="px-4 py-6 pb-24 space-y-6">
+        {/* Join Class Section */}
+        <div className="slide-up space-y-4" style={{ animationDelay: "50ms" }}>
+          <Card className="glass-card border border-border p-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Join a Class
+            </h3>
+            <div className="flex gap-2 mb-3">
+              <Input
+                placeholder="Enter class code (e.g., ABC123)"
+                value={classCode}
+                onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+                onKeyPress={(e) => e.key === 'Enter' && joinClass()}
+                maxLength={6}
+              />
+              <Button onClick={joinClass} disabled={isJoining}>
+                {isJoining ? 'Joining...' : 'Join'}
+              </Button>
+            </div>
+            {joinedClasses.length > 0 && (
+              <div>
+                <p className="text-sm font-medium mb-2">Joined Classes:</p>
+                <div className="flex flex-wrap gap-2">
+                  {joinedClasses.map((cls) => (
+                    <div key={cls.id} className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded text-xs">
+                      <Users className="h-3 w-3" />
+                      <span>{cls.name} ({cls.code})</span>
+                      <button
+                        onClick={() => leaveClass(cls.id, cls.name)}
+                        className="ml-1 hover:bg-red-100 rounded p-0.5"
+                        title="Leave class"
+                      >
+                        <X className="h-3 w-3 text-red-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+
         {/* HEADER */}
         <div className="slide-up space-y-4">
           <div className="glass-card rounded-2xl p-5 border border-border">
@@ -186,6 +361,9 @@ export default function TasksPage() {
                           <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                             {assignment.subject}
                           </span>
+                          <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
+                            {assignment.className} ({assignment.classCode})
+                          </span>
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             30 min
@@ -229,12 +407,27 @@ export default function TasksPage() {
                         )}
                       </div>
                     )}
+                    
+                    {/* Due Date Warning */}
+                    {assignment.due_date && new Date(assignment.due_date) < new Date() && !submittedAssignments.has(assignment.id) && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 text-red-600 bg-red-50 p-2 rounded">
+                          <span className="text-sm font-medium">⚠️ Assignment Overdue - Submission Closed</span>
+                        </div>
+                      </div>
+                    )}
                     <Button 
                       className="w-full" 
                       size="sm"
                       variant={submittedAssignments.has(assignment.id) && submissionStatuses.get(assignment.id) !== 'rejected' ? "secondary" : "default"}
-                      disabled={submittedAssignments.has(assignment.id) && submissionStatuses.get(assignment.id) !== 'rejected'}
+                      disabled={submittedAssignments.has(assignment.id) && submissionStatuses.get(assignment.id) !== 'rejected' || (assignment.due_date && new Date(assignment.due_date) < new Date() && !submittedAssignments.has(assignment.id))}
                       onClick={() => {
+                        // Check if assignment is overdue
+                        if (assignment.due_date && new Date(assignment.due_date) < new Date() && !submittedAssignments.has(assignment.id)) {
+                          toast.error('Assignment is overdue. Submission is no longer allowed.');
+                          return;
+                        }
+                        
                         if (submittedAssignments.has(assignment.id) && submissionStatuses.get(assignment.id) !== 'rejected') return;
                         
                         const studentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student';
@@ -309,7 +502,9 @@ export default function TasksPage() {
                           : submissionStatuses.get(assignment.id) === 'rejected'
                             ? 'Resubmit File'
                             : '✓ Submitted'
-                        : 'Upload File (Image/PDF)'
+                        : assignment.due_date && new Date(assignment.due_date) < new Date()
+                          ? '⚠️ Overdue'
+                          : 'Upload File (Image/PDF)'
                       }
                     </Button>
                   </div>
