@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface TaskSubmission {
   id: string;
   assignmentId: string;
+  studentId?: string;
   studentName: string;
   submittedAt: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -135,17 +136,105 @@ export default function TeacherTaskVerificationPage() {
   const handleApprove = async (submissionId: string) => {
     setIsProcessing(true);
     try {
+      const submission = submissions.find(sub => sub.id === submissionId);
+      if (!submission) {
+        toast.error("Submission not found");
+        return;
+      }
+
+      // Find the assignment to get coin reward
+      const assignment = assignments.find(a => a.id === submission.assignmentId);
+      const coinReward = assignment?.coin_reward || 50;
+
       const updatedSubmissions = submissions.map(sub => 
         sub.id === submissionId ? { ...sub, status: 'approved' as const } : sub
       );
       setSubmissions(updatedSubmissions);
       localStorage.setItem('taskSubmissions', JSON.stringify(updatedSubmissions));
-      toast.success("Task approved! Student will be notified.");
+
+      // Award coins to student
+      await awardCoinsToStudent(submission, coinReward);
+      
+      // Also add a direct wallet update as backup
+      const walletKey = 'wallet_student_001';
+      const savedWallet = localStorage.getItem(walletKey);
+      if (savedWallet) {
+        const walletData = JSON.parse(savedWallet);
+        walletData.earned = (walletData.earned || 1200) + coinReward;
+        walletData.transactions = walletData.transactions || [];
+        walletData.transactions.unshift({
+          id: `tx_earn_${Date.now()}`,
+          amount: coinReward,
+          type: "earn",
+          description: `Assignment: ${submission.assignmentTitle}`,
+          timestamp: new Date().toISOString(),
+        });
+        localStorage.setItem(walletKey, JSON.stringify(walletData));
+        console.log('Direct wallet update completed');
+      }
+      
+      toast.success(`Task approved! Student earned ${coinReward} coins.`);
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const awardCoinsToStudent = async (submission: TaskSubmission, coinReward: number) => {
+    try {
+      console.log('Trying to award coins to student:', submission.studentName);
+      
+      // Get all wallet keys from localStorage
+      const allKeys = Object.keys(localStorage);
+      const walletKeys = allKeys.filter(key => key.startsWith('wallet_'));
+      
+      console.log('Found wallet keys:', walletKeys);
+      
+      if (walletKeys.length === 0) {
+        // No wallets exist, create one for student_001
+        const walletKey = 'wallet_student_001';
+        const newWallet = {
+          earned: 1200 + coinReward,
+          spent: 0,
+          transactions: [{
+            id: `tx_earn_${Date.now()}_${Math.random()}`,
+            amount: coinReward,
+            type: "earn",
+            description: `Assignment completed: ${submission.assignmentTitle || 'Assignment'}`,
+            timestamp: new Date().toISOString(),
+          }]
+        };
+        localStorage.setItem(walletKey, JSON.stringify(newWallet));
+        console.log(`Created wallet and awarded ${coinReward} coins to student_001`);
+        return;
+      }
+      
+      // Award coins to the first wallet found (assuming single student for now)
+      const firstWalletKey = walletKeys[0];
+      const savedWallet = localStorage.getItem(firstWalletKey);
+      
+      if (savedWallet) {
+        const walletData = JSON.parse(savedWallet);
+        
+        // Add earn transaction
+        const earnTransaction = {
+          id: `tx_earn_${Date.now()}_${Math.random()}`,
+          amount: coinReward,
+          type: "earn",
+          description: `Assignment completed: ${submission.assignmentTitle || 'Assignment'}`,
+          timestamp: new Date().toISOString(),
+        };
+        
+        walletData.transactions = walletData.transactions || [];
+        walletData.transactions.unshift(earnTransaction);
+        walletData.earned = (walletData.earned || 1200) + coinReward;
+        
+        localStorage.setItem(firstWalletKey, JSON.stringify(walletData));
+        console.log(`Awarded ${coinReward} coins to ${firstWalletKey}`);
+      }
+    } catch (error) {
+      console.error('Error awarding coins:', error);
+    }
+  };
   const handleReject = async (submissionId: string) => {
     setIsProcessing(true);
     try {

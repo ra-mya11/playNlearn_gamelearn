@@ -98,9 +98,6 @@ export default function RewardsPage() {
           try {
             const redemptions = JSON.parse(saved);
             setSavedRedemptions(redemptions);
-            
-            // Check for status changes and update wallet accordingly
-            updateWalletBasedOnRedemptions(redemptions);
           } catch (error) {
             console.error('Error loading saved redemptions:', error);
           }
@@ -125,7 +122,6 @@ export default function RewardsPage() {
         try {
           const redemptions = JSON.parse(saved);
           setSavedRedemptions(redemptions);
-          updateWalletBasedOnRedemptions(redemptions);
         } catch (error) {
           console.error('Error checking redemption status:', error);
         }

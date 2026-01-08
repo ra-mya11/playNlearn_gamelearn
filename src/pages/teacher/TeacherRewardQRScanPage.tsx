@@ -164,6 +164,12 @@ export default function TeacherRewardQRScanPage() {
       // Try to find the redemption in student's saved redemptions
       const allRedemptions = getAllStudentRedemptions();
       console.log('Searching in redemptions:', allRedemptions);
+      console.log('Total redemptions found:', allRedemptions.length);
+      
+      if (allRedemptions.length === 0) {
+        toast.error("No student redemptions found. Students need to redeem rewards first.");
+        return;
+      }
       
       const redemption = allRedemptions.find(r => {
         console.log('Comparing:', r.redemptionCode, 'with', code);
@@ -185,7 +191,7 @@ export default function TeacherRewardQRScanPage() {
         toast.success("QR code scanned successfully!");
       } else {
         console.log('No matching redemption found for code:', code);
-        toast.error("Invalid or expired redemption code");
+        toast.error(`Code not found. Available: ${allRedemptions.map(r => r.redemptionCode).slice(0,3).join(', ')}`);
       }
     } catch (error) {
       console.error("Error processing code:", error);
@@ -255,17 +261,60 @@ export default function TeacherRewardQRScanPage() {
       if (key.startsWith("student_redemptions_")) {
         try {
           const redemptions = JSON.parse(localStorage.getItem(key) || "[]");
-          const updated = redemptions.map((r: RedemptionData) => 
-            r.redemptionCode === code 
-              ? { ...r, status: status === "approved" ? "verified" : "rejected" }
-              : r
-          );
-          localStorage.setItem(key, JSON.stringify(updated));
+          const redemption = redemptions.find((r: RedemptionData) => r.redemptionCode === code);
+          
+          if (redemption) {
+            // Update status
+            const updated = redemptions.map((r: RedemptionData) => 
+              r.redemptionCode === code 
+                ? { ...r, status: status === "approved" ? "verified" : "rejected" }
+                : r
+            );
+            localStorage.setItem(key, JSON.stringify(updated));
+            
+            // Only deduct coins when approved
+            if (status === "approved") {
+              // deductCoinsFromStudent(redemption.studentId, redemption.coinsRedeemed, redemption.productName);
+            }
+            // If rejected, do nothing to coins (they were never deducted)
+          }
         } catch (e) {
           // Ignore invalid entries
         }
       }
     });
+  };
+
+  // Deduct coins from student wallet when teacher approves
+  const deductCoinsFromStudent = (studentId: string, amount: number, productName: string) => {
+    const walletKey = `wallet_${studentId}`;
+    const savedWallet = localStorage.getItem(walletKey);
+    
+    if (savedWallet) {
+      try {
+        const walletData = JSON.parse(savedWallet);
+        
+        // Increase spent amount
+        walletData.spent = (walletData.spent || 0) + amount;
+        
+        // Add spend transaction
+        const spendTransaction = {
+          id: `tx_spend_${Date.now()}_${Math.random()}`,
+          amount: amount,
+          type: "spend",
+          description: `Redeemed: ${productName} (Approved by teacher)`,
+          timestamp: new Date().toISOString(),
+        };
+        
+        walletData.transactions = walletData.transactions || [];
+        walletData.transactions.unshift(spendTransaction);
+        
+        localStorage.setItem(walletKey, JSON.stringify(walletData));
+        console.log(`Deducted ${amount} coins from student ${studentId}`);
+      } catch (error) {
+        console.error('Error deducting coins:', error);
+      }
+    }
   };
 
   // Handle manual code entry

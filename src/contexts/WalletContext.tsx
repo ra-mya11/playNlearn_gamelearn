@@ -23,6 +23,7 @@ interface WalletContextType {
   }>;
   updateSpent: (amount: number) => void;
   addTransaction: (amount: number, type: "earn" | "spend", description: string) => void;
+  refreshWallet: () => void;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -31,11 +32,32 @@ const FIXED_EARNED_AMOUNT = 1200; // Fixed earned coins
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [earned] = useState(FIXED_EARNED_AMOUNT);
+  const [earned, setEarned] = useState(0);
   const [spent, setSpent] = useState(0);
   const [transactions, setTransactions] = useState<WalletContextType["transactions"]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Initialize wallet from localStorage on mount
+  // One-time cleanup of all wallet data
+  useEffect(() => {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('wallet_')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }, []);
+
+  // Reset state immediately when user changes
+  useEffect(() => {
+    if (currentUserId !== user?.id) {
+      setEarned(user?.id ? FIXED_EARNED_AMOUNT : 0);
+      setSpent(0);
+      setTransactions([]);
+      setCurrentUserId(user?.id || null);
+    }
+  }, [user?.id, currentUserId]);
+
+  // Initialize wallet from localStorage after reset
   useEffect(() => {
     if (!user?.id) return;
 
@@ -44,7 +66,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     if (savedWallet) {
       try {
-        const { spent: savedSpent, transactions: savedTransactions } = JSON.parse(savedWallet);
+        const { earned: savedEarned, spent: savedSpent, transactions: savedTransactions } = JSON.parse(savedWallet);
+        setEarned(savedEarned || FIXED_EARNED_AMOUNT);
         setSpent(savedSpent || 0);
         setTransactions(
           (savedTransactions || []).map((tx: any) => ({
@@ -55,8 +78,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Error loading wallet from localStorage:", error);
       }
+    } else {
+      // Set default earned amount for new users
+      setEarned(FIXED_EARNED_AMOUNT);
     }
-  }, [user?.id]);
+  }, [currentUserId]);
 
   // Persist wallet to localStorage whenever it changes
   useEffect(() => {
@@ -97,6 +123,29 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshWallet = () => {
+    if (!user?.id) return;
+    
+    const storageKey = `wallet_${user.id}`;
+    const savedWallet = localStorage.getItem(storageKey);
+    
+    if (savedWallet) {
+      try {
+        const { earned: savedEarned, spent: savedSpent, transactions: savedTransactions } = JSON.parse(savedWallet);
+        setEarned(savedEarned || FIXED_EARNED_AMOUNT);
+        setSpent(savedSpent || 0);
+        setTransactions(
+          (savedTransactions || []).map((tx: any) => ({
+            ...tx,
+            timestamp: new Date(tx.timestamp),
+          }))
+        );
+      } catch (error) {
+        console.error('Error refreshing wallet:', error);
+      }
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -106,6 +155,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         transactions,
         updateSpent,
         addTransaction,
+        refreshWallet,
       }}
     >
       {children}

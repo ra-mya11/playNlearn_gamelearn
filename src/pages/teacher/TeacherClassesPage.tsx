@@ -128,30 +128,6 @@ export default function TeacherClassesPage() {
     }
   };
 
-  // Calculate dynamic stats based on actual classes and students
-  const calculateStats = () => {
-    const savedStudents = JSON.parse(localStorage.getItem('classStudents') || '{}');
-    let totalStudents = 0;
-    let totalProgress = 0;
-    let studentCount = 0;
-
-    classes.forEach((cls) => {
-      const classStudents = savedStudents[cls.id] || [];
-      totalStudents += classStudents.length;
-      classStudents.forEach((student) => {
-        totalProgress += student.progress || Math.floor(Math.random() * 100);
-        studentCount++;
-      });
-    });
-
-    return {
-      totalStudents,
-      avgProgress: studentCount > 0 ? Math.round(totalProgress / studentCount) : 0
-    };
-  };
-
-  const stats = calculateStats();
-
   // Calculate class-specific data from localStorage
   const getClassData = (cls) => {
     const classEnrollments = JSON.parse(localStorage.getItem('classEnrollments') || '{}');
@@ -204,22 +180,8 @@ export default function TeacherClassesPage() {
           </div>
         </Card>
 
-        {/* Stats Overview */}
-        <div className="mb-6 grid grid-cols-2 gap-3 slide-up" style={{ animationDelay: "100ms" }}>
-          <div className="rounded-xl border border-border bg-card p-4 text-center">
-            <Users className="mx-auto mb-2 h-6 w-6 text-primary" />
-            <p className="font-heading text-2xl font-bold">{stats.totalStudents}</p>
-            <p className="text-sm text-muted-foreground">Total Students</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4 text-center">
-            <TrendingUp className="mx-auto mb-2 h-6 w-6 text-secondary" />
-            <p className="font-heading text-2xl font-bold">{stats.avgProgress}%</p>
-            <p className="text-sm text-muted-foreground">Avg Progress</p>
-          </div>
-        </div>
-
         {/* Classes List */}
-        <div className="space-y-4 slide-up" style={{ animationDelay: "150ms" }}>
+        <div className="space-y-4 slide-up" style={{ animationDelay: "100ms" }}>
           {loading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Loading classes...</p>

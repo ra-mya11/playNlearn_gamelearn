@@ -26,7 +26,8 @@ export default function TeacherCreateAssignmentPage() {
     description: "",
     subject: "",
     dueDate: "",
-    classId: ""
+    classId: "",
+    coinReward: 50
   });
 
   useEffect(() => {
@@ -84,6 +85,7 @@ export default function TeacherCreateAssignmentPage() {
         due_date: formData.dueDate || null,
         teacher_id: user?.id || 'teacher_001',
         class_id: formData.classId,
+        coin_reward: formData.coinReward,
         is_active: true,
         created_at: new Date().toISOString()
       };
@@ -204,6 +206,26 @@ export default function TeacherCreateAssignmentPage() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Coin Reward */}
+            <div className="space-y-2">
+              <Label htmlFor="coinReward" className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-yellow-500" />
+                Coin Reward for Completion
+              </Label>
+              <Input
+                id="coinReward"
+                type="number"
+                min="10"
+                max="500"
+                value={formData.coinReward}
+                onChange={(e) => setFormData({...formData, coinReward: parseInt(e.target.value) || 50})}
+                placeholder="Enter coins to reward (10-500)"
+              />
+              <p className="text-sm text-muted-foreground">
+                Students will earn these coins when you approve their assignment submission
+              </p>
             </div>
 
             {/* Submit Button */}

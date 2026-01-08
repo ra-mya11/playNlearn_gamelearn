@@ -26,6 +26,7 @@ interface MyRedeemedRewardsScreenProps {
   redemptions: RedemptionData[];
   onBack: () => void;
   onViewQR: (redemption: RedemptionData) => void;
+  onDelete?: (redemptionCode: string) => void;
 }
 
 interface StatusConfig {
@@ -40,6 +41,7 @@ export function MyRedeemedRewardsScreen({
   redemptions,
   onBack,
   onViewQR,
+  onDelete,
 }: MyRedeemedRewardsScreenProps) {
   const { t } = useTranslation();
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -137,9 +139,9 @@ export function MyRedeemedRewardsScreen({
 
   if (redemptions.length === 0) {
     return (
-      <div className="fixed inset-0 z-50 overflow-auto bg-black/40 backdrop-blur-sm flex items-center justify-center pointer-events-none p-4">
+      <div className="fixed inset-0 z-50 overflow-auto bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
         {/* Modal Card Container */}
-        <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-br from-card/95 via-card/85 to-card/75 backdrop-blur-xl border-2 border-primary/20 shadow-2xl shadow-primary/50 pointer-events-auto animate-fade-in">
+        <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-br from-card/95 via-card/85 to-card/75 backdrop-blur-xl border-2 border-primary/20 shadow-2xl shadow-primary/50 animate-fade-in">
           {/* Header */}
           <div className="sticky top-0 z-40 border-b border-border/30 bg-background/40 backdrop-blur-xl rounded-t-3xl">
             <div className="flex items-center justify-between gap-4 px-4 py-4">
@@ -247,6 +249,7 @@ export function MyRedeemedRewardsScreen({
                     key={redemption.id}
                     redemption={redemption}
                     onViewQR={onViewQR}
+                    onDelete={onDelete}
                     statusConfig={getStatusConfig(
                       redemption.status,
                       redemption.expiryDate
@@ -276,6 +279,7 @@ export function MyRedeemedRewardsScreen({
                     key={redemption.id}
                     redemption={redemption}
                     onViewQR={onViewQR}
+                    onDelete={onDelete}
                     statusConfig={getStatusConfig(
                       redemption.status,
                       redemption.expiryDate
@@ -306,6 +310,7 @@ export function MyRedeemedRewardsScreen({
                     key={redemption.id}
                     redemption={redemption}
                     onViewQR={onViewQR}
+                    onDelete={onDelete}
                     statusConfig={getStatusConfig(
                       redemption.status,
                       redemption.expiryDate
@@ -329,12 +334,14 @@ export function MyRedeemedRewardsScreen({
 function RedemptionCard({
   redemption,
   onViewQR,
+  onDelete,
   statusConfig,
   daysUntilExpiry,
   disabled = false,
 }: {
   redemption: RedemptionData;
   onViewQR: (redemption: RedemptionData) => void;
+  onDelete?: (redemptionCode: string) => void;
   statusConfig: StatusConfig;
   daysUntilExpiry: number;
   disabled?: boolean;
@@ -342,14 +349,11 @@ function RedemptionCard({
   const { t } = useTranslation();
 
   return (
-    <div
-      onClick={() => !disabled && onViewQR(redemption)}
-      className={`w-full text-left rounded-lg border-2 overflow-hidden transition-all ${
+    <div className={`w-full text-left rounded-lg border-2 overflow-hidden transition-all ${
         disabled
-          ? "bg-card/20 opacity-50 border-border/30 cursor-not-allowed"
-          : "bg-card/40 border-primary/20 hover:bg-card/50 hover:border-primary/40 cursor-pointer"
-      }`}
-    >
+          ? "bg-card/20 opacity-50 border-border/30"
+          : "bg-card/40 border-primary/20 hover:bg-card/50 hover:border-primary/40"
+      }`}>
       {/* Status Badge */}
       <div className={`border-b border-border/30 px-3 py-2 flex items-center gap-2 ${statusConfig.bgColor}`}>
         {statusConfig.icon}
@@ -378,7 +382,7 @@ function RedemptionCard({
           </code>
         </div>
 
-        {/* Expiry Info & Action */}
+        {/* Expiry Info & Actions */}
         <div className="flex items-center justify-between gap-2 pt-1">
           {daysUntilExpiry >= 0 && !disabled && (
             <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -388,12 +392,26 @@ function RedemptionCard({
                 : "Today"}
             </div>
           )}
-          {!disabled && (
-            <div className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
-              <Eye className="h-3 w-3" />
-              View
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {!disabled && (
+              <button
+                onClick={() => onViewQR(redemption)}
+                className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+              >
+                <Eye className="h-3 w-3" />
+                View
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(redemption.redemptionCode)}
+                className="text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors"
+              >
+                <X className="h-3 w-3" />
+                Delete
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
