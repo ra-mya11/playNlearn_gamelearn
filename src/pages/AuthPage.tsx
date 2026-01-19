@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,7 +94,23 @@ export default function AuthPage() {
         if (error.message.includes("Invalid login credentials")) {
           toast.error("Invalid email or password. Please try again.");
         } else if (error.message.includes("Email not confirmed")) {
-          toast.error("Please confirm your email before logging in.");
+          toast.error("Please check your email and click the confirmation link before logging in. Check your spam folder if you don't see it.", {
+            duration: 8000,
+            action: {
+              label: "Resend Email",
+              onClick: async () => {
+                const { error: resendError } = await supabase.auth.resend({
+                  type: 'signup',
+                  email: email
+                });
+                if (resendError) {
+                  toast.error("Failed to resend confirmation email.");
+                } else {
+                  toast.success("Confirmation email sent! Check your inbox.");
+                }
+              }
+            }
+          });
         } else {
           toast.error(error.message);
         }
